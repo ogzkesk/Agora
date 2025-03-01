@@ -1,11 +1,16 @@
 package com.ogzkesk.agora.controller
 
 import android.content.Context
+import com.ogzkesk.agora.model.ActiveCall
+import com.ogzkesk.agora.model.User
 import io.agora.rtc2.ChannelMediaOptions
 import io.agora.rtc2.Constants
 import io.agora.rtc2.IRtcEngineEventHandler
 import io.agora.rtc2.RtcEngine
 import io.agora.rtc2.RtcEngineConfig
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 class AudioController(
     private val context: Context
@@ -14,21 +19,61 @@ class AudioController(
     private val channelName = "test-channel"
     private val token =
         "007eJxTYFBYLmKaF3Foqq+ixsxZxw9yGHF88eeJtz4vkJl612U/p4MCQ0qKialpsqG5YWpqikmiYZpFUqqpuZFRkrlZkqlFkqWJRfSh9IZARgYmHnNGRgYIBPF5GEpSi0t0kzMS8/JScxgYACDCHjQ="
-    private var mRtcEngine: RtcEngine? = null
-    private var interactionListener: InteractionListener? = null
 
-    fun initialize(
-        eventHandler: IRtcEngineEventHandler,
-        interactionListener: InteractionListener
-    ) {
+    private var mRtcEngine: RtcEngine? = null
+    private var isLocalMuted: Boolean = false
+    private val mutableActiveCall = MutableStateFlow<ActiveCall?>(null)
+    val activeCall = mutableActiveCall.asStateFlow()
+
+    fun initialize() {
         try {
             val config = RtcEngineConfig().apply {
                 mContext = this@AudioController.context
                 mAppId = myAppId
-                mEventHandler = eventHandler
+                mEventHandler = object : IRtcEngineEventHandler() {
+                    override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
+                        super.onJoinChannelSuccess(channel, uid, elapsed)
+                        mutableActiveCall.update {
+                            ActiveCall(channelName, uid, emptyList())
+                        }
+                        println("Joined channel: $channel uid: $uid elapsed: $elapsed")
+                    }
+
+                    override fun onRejoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
+                        super.onRejoinChannelSuccess(channel, uid, elapsed)
+                        mutableActiveCall.update {
+                            it ?: ActiveCall(channelName, uid, emptyList())
+                        }
+                        println("Re-Joined channel: $channel uid: $uid elapsed: $elapsed")
+                    }
+
+                    override fun onLeaveChannel(stats: RtcStats?) {
+                        super.onLeaveChannel(stats)
+                        mutableActiveCall.update {
+                            null
+                        }
+                        println("onLeaveChannel users: ${stats?.users} totalDuration: ${stats?.totalDuration}")
+                    }
+
+                    override fun onUserJoined(uid: Int, elapsed: Int) {
+                        mutableActiveCall.value = activeCall.value?.copy(
+                            remoteUsers = activeCall.value?.remoteUsers?.plus(User.create(uid))
+                                ?: emptyList()
+                        )
+                        println("User joined: $uid")
+                    }
+
+                    override fun onUserOffline(uid: Int, reason: Int) {
+                        super.onUserOffline(uid, reason)
+                        val user = activeCall.value?.remoteUsers?.find { it.id == uid } ?: return
+                        mutableActiveCall.value = activeCall.value?.copy(
+                            remoteUsers = activeCall.value?.remoteUsers?.minus(user) ?: emptyList()
+                        )
+                        println("User joined: $uid")
+                    }
+                }
             }
             this.mRtcEngine = RtcEngine.create(config)
-            this.interactionListener = interactionListener
         } catch (e: Exception) {
             throw RuntimeException("Error initializing RTC engine: ${e.message}")
         }
@@ -47,28 +92,20 @@ class AudioController(
         mRtcEngine?.leaveChannel()
     }
 
-    fun muteLocalAudio() {
-        mRtcEngine?.muteLocalAudioStream(true)
-        interactionListener?.onLocalMuted(true)
+    fun toggleLocalAudio(value: Boolean) {
+        mRtcEngine?.muteLocalAudioStream(value)
+        isLocalMuted = value
     }
 
-    fun unMuteLocal() {
-        mRtcEngine?.muteLocalAudioStream(false)
-        interactionListener?.onLocalMuted(false)
+    fun toggleRemoteAudio(uid: Int, value: Boolean) {
+        mRtcEngine?.muteRemoteAudioStream(uid, value)
     }
 
-    fun muteRemoteAudio(uid: Int) {
-        mRtcEngine?.muteRemoteAudioStream(uid, true)
-        interactionListener?.onRemoteMuted(uid, true)
+    fun setLocalVolume(volume: Int) {
+        mRtcEngine?.adjustPlaybackSignalVolume(volume)
     }
 
-    fun unMuteRemoteAudio(uid: Int) {
-        mRtcEngine?.muteRemoteAudioStream(uid, false)
-        interactionListener?.onRemoteMuted(uid, false)
-    }
-
-    interface InteractionListener {
-        fun onLocalMuted(value: Boolean)
-        fun onRemoteMuted(uid: Int, value: Boolean)
+    fun setRemoteVolume(uid: Int, volume: Int) {
+        mRtcEngine?.adjustUserPlaybackSignalVolume(uid, volume)
     }
 }

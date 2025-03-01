@@ -4,6 +4,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp") version "2.1.10-1.0.30"
     id("com.google.dagger.hilt.android")
+    kotlin("plugin.serialization") version "2.1.10"
 }
 
 android {
@@ -79,8 +80,10 @@ dependencies {
     implementation(libs.logging.interceptor)
     implementation(libs.coil.compose)
 
+
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.room.compiler)
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("io.agora.rtc:voice-sdk:4.5.0")
 }

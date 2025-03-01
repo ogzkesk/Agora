@@ -11,32 +11,42 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ogzkesk.agora.util.showToast
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.ogzkesk.agora.navigation.VoiceCallScreenRoute
+import com.ogzkesk.agora.ui.theme.AgoraTheme
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
-    viewModel: MainViewModel = hiltViewModel()
+    navController: NavHostController,
+    state: MainScreenState,
+    onUiEvent: (MainScreenEvent) -> Unit
 ) {
     val context = LocalContext.current
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
+    val snackBarHostState = remember { SnackbarHostState() }
     val resultLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
         if (it.values.any { false }) {
-            context.showToast("Please grant all permissions")
+            coroutineScope.launch {
+                snackBarHostState.showSnackbar("Required permissions not granted")
+            }
         }
     }
 
@@ -44,80 +54,37 @@ fun MainScreen(
         resultLauncher.launch(getRequiredPermissions())
     }
 
-    Scaffold { paddingValues ->
-        if (state.activeCall == null) {
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Button(
-                    onClick = {
-                        if (checkRequiredPermissions(context)) {
-                            viewModel.startVoiceCalling()
-                        }
-                    },
-                    modifier = Modifier
-                        .padding(12.dp)
-                ) {
-                    Text("Start Voice Calling")
-                }
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "ChannelId: ${state.activeCall?.channelId}\n" +
-                            "ChannelName: ${state.activeCall?.channelName}"
-                )
-                Button(
-                    onClick = viewModel::leaveVoiceCalling,
-                    modifier = Modifier
-                        .padding(12.dp)
-                ) {
-                    Text("Leave Voice Calling")
-                }
+    LaunchedEffect(state.activeCall) {
+        if (state.activeCall != null) navController.navigate(VoiceCallScreenRoute)
+    }
 
-                Card(modifier = Modifier.padding(12.dp)) {
-                    Text("Remote Users")
-                    state.activeCall?.remoteUsers?.forEach { user ->
-                        Button(
-                            onClick = {
-                                if (user.isMuted) {
-                                    viewModel.toggleRemoteMute(user.id, false)
-                                } else {
-                                    viewModel.toggleRemoteMute(user.id, true)
-                                }
-                            },
-                            modifier = Modifier
-                                .padding(12.dp),
-                        ) {
-                            if (user.isMuted) Text("Un-Mute User")
-                            else Text("Mute User")
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackBarHostState)
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(
+                onClick = {
+                    if (checkRequiredPermissions(context)) {
+                        onUiEvent(MainScreenEvent.StartVoiceCalling)
+                    } else {
+                        coroutineScope.launch {
+                            snackBarHostState.showSnackbar("Required permissions not granted")
+                            resultLauncher.launch(getRequiredPermissions())
                         }
                     }
-                }
-
-                Button(
-                    onClick = {
-                        if (state.isLocalMuted) {
-                            viewModel.toggleMute(false)
-                        } else {
-                            viewModel.toggleMute(true)
-                        }
-                    },
-                    modifier = Modifier
-                        .padding(12.dp),
-                ) {
-                    if (state.isLocalMuted) Text("Un-Mute Local") else Text("Mute Local")
-                }
+                },
+                modifier = Modifier
+                    .padding(12.dp)
+            ) {
+                Text("Start Voice Calling")
             }
         }
     }
@@ -138,5 +105,17 @@ fun getRequiredPermissions(): Array<String> {
         )
     } else {
         arrayOf(Manifest.permission.RECORD_AUDIO)
+    }
+}
+
+@Preview
+@Composable
+fun MainScreenPreview() {
+    AgoraTheme {
+        MainScreen(
+            navController = rememberNavController(),
+            state = MainScreenState(),
+            onUiEvent = {}
+        )
     }
 }
