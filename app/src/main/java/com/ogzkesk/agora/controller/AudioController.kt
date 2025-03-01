@@ -21,7 +21,6 @@ class AudioController(
         "007eJxTYFBYLmKaF3Foqq+ixsxZxw9yGHF88eeJtz4vkJl612U/p4MCQ0qKialpsqG5YWpqikmiYZpFUqqpuZFRkrlZkqlFkqWJRfSh9IZARgYmHnNGRgYIBPF5GEpSi0t0kzMS8/JScxgYACDCHjQ="
 
     private var mRtcEngine: RtcEngine? = null
-    private var isLocalMuted: Boolean = false
     private val mutableActiveCall = MutableStateFlow<ActiveCall?>(null)
     val activeCall = mutableActiveCall.asStateFlow()
 
@@ -37,14 +36,6 @@ class AudioController(
                             ActiveCall(channelName, uid, emptyList())
                         }
                         println("Joined channel: $channel uid: $uid elapsed: $elapsed")
-                    }
-
-                    override fun onRejoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
-                        super.onRejoinChannelSuccess(channel, uid, elapsed)
-                        mutableActiveCall.update {
-                            it ?: ActiveCall(channelName, uid, emptyList())
-                        }
-                        println("Re-Joined channel: $channel uid: $uid elapsed: $elapsed")
                     }
 
                     override fun onLeaveChannel(stats: RtcStats?) {
@@ -69,7 +60,7 @@ class AudioController(
                         mutableActiveCall.value = activeCall.value?.copy(
                             remoteUsers = activeCall.value?.remoteUsers?.minus(user) ?: emptyList()
                         )
-                        println("User joined: $uid")
+                        println("User Offline: $uid")
                     }
                 }
             }
@@ -79,13 +70,16 @@ class AudioController(
         }
     }
 
-    fun startVoiceCalling() {
+    fun startVoiceCalling(
+        channelName: String = this.channelName,
+        uid: Int = 0 // userId "0" creates random uid
+    ) {
         val options = ChannelMediaOptions().apply {
             clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
             channelProfile = Constants.CHANNEL_PROFILE_COMMUNICATION
             publishMicrophoneTrack = true
         }
-        mRtcEngine?.joinChannel(token, channelName, 0, options)
+        mRtcEngine?.joinChannel(token, channelName, uid, options)
     }
 
     fun leaveVoiceCalling() {
@@ -94,18 +88,31 @@ class AudioController(
 
     fun toggleLocalAudio(value: Boolean) {
         mRtcEngine?.muteLocalAudioStream(value)
-        isLocalMuted = value
     }
 
     fun toggleRemoteAudio(uid: Int, value: Boolean) {
         mRtcEngine?.muteRemoteAudioStream(uid, value)
+        mutableActiveCall.update {
+            it?.copy(
+                remoteUsers = it.remoteUsers.map { user ->
+                    if (user.id == uid) user.copy(isMuted = value) else user
+                }
+            )
+        }
     }
 
     fun setLocalVolume(volume: Int) {
-        mRtcEngine?.adjustPlaybackSignalVolume(volume)
+        mRtcEngine?.adjustRecordingSignalVolume(volume)
     }
 
     fun setRemoteVolume(uid: Int, volume: Int) {
         mRtcEngine?.adjustUserPlaybackSignalVolume(uid, volume)
+        mutableActiveCall.update {
+            it?.copy(
+                remoteUsers = it.remoteUsers.map { user ->
+                    if (user.id == uid) user.copy(volume = volume) else user
+                }
+            )
+        }
     }
 }

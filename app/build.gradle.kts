@@ -86,4 +86,6 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     implementation("io.agora.rtc:voice-sdk:4.5.0")
+
+    debugImplementation("androidx.compose.ui:ui-tooling")
 }

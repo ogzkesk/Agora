@@ -27,12 +27,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.ogzkesk.agora.model.ActiveCall
 import com.ogzkesk.agora.model.User
+import com.ogzkesk.agora.ui.theme.AgoraTheme
 
 @Composable
-fun CallScreen(
+fun VoiceCallScreen(
     navController: NavHostController,
     state: VoiceCallScreenState,
     onUiEvent: (VoiceCallScreenEvent) -> Unit
@@ -44,56 +48,48 @@ fun CallScreen(
     Scaffold(
         bottomBar = {
             BottomAppBar {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    FilledTonalIconButton(
+                        onClick = { onUiEvent(VoiceCallScreenEvent.EndCall) },
+                        modifier = Modifier.padding(horizontal = 12.dp)
                     ) {
-                        FilledTonalIconButton(
-                            onClick = { onUiEvent(VoiceCallScreenEvent.EndCall) },
-                            modifier = Modifier.padding(horizontal = 12.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                contentDescription = null
-                            )
-                        }
-                        FilledTonalIconButton(
-                            onClick = {
-                                onUiEvent(VoiceCallScreenEvent.ToggleMuteLocal(!state.isLocalMuted))
-                            },
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = if (state.isLocalMuted) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
-                                contentColor = if (state.isLocalMuted) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Call,
-                                contentDescription = null
-                            )
-                        }
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Slider(
-                            value = state.localVolume.toFloat(),
-                            valueRange = 0f..100f,
-                            steps = 100,
-                            onValueChange = {
-                                onUiEvent(VoiceCallScreenEvent.LocalVolumeChange(it.toInt()))
-                            },
-                            modifier = Modifier.width(120.dp)
-                        )
                         Icon(
-                            imageVector = Icons.Default.Build,
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                             contentDescription = null
                         )
                     }
+                    FilledTonalIconButton(
+                        onClick = {
+                            onUiEvent(VoiceCallScreenEvent.ToggleMuteLocal(!state.isLocalMuted))
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = if (state.isLocalMuted) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
+                            contentColor = if (state.isLocalMuted) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = null
+                        )
+                    }
+
+                    Slider(
+                        value = state.localVolume.toFloat(),
+                        valueRange = 0f..100f,
+                        onValueChange = {
+                            onUiEvent(VoiceCallScreenEvent.LocalVolumeChange(it.toInt()))
+                        },
+                        modifier = Modifier.width(120.dp)
+                    )
+                    Text(
+                        "${state.localVolume}",
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
             }
         }
@@ -121,17 +117,40 @@ fun RemoteUser(
     onUiEvent: (VoiceCallScreenEvent) -> Unit
 ) {
     Card(
-        modifier = modifier.padding(12.dp),
+        modifier = modifier
+            .padding(12.dp)
+            .fillMaxWidth(),
         shape = MaterialTheme.shapes.medium
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                "UserId: ${user.id}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "UserId: ${user.id}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                FilledTonalIconButton(
+                    onClick = {
+                        onUiEvent(VoiceCallScreenEvent.ToggleMuteRemote(user.id, !user.isMuted))
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = if (user.isMuted) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
+                        contentColor = if (user.isMuted) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Call,
+                        contentDescription = null
+                    )
+                }
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -139,7 +158,6 @@ fun RemoteUser(
                 Slider(
                     value = user.volume.toFloat(),
                     valueRange = 0f..100f,
-                    steps = 100,
                     onValueChange = {
                         onUiEvent(
                             VoiceCallScreenEvent.RemoteVolumeChange(
@@ -148,28 +166,31 @@ fun RemoteUser(
                             )
                         )
                     },
-                    modifier = Modifier.width(120.dp)
+                    modifier = Modifier.weight(1f)
                 )
-                Icon(
-                    imageVector = Icons.Default.Build,
-                    contentDescription = null
-                )
-            }
-            FilledTonalIconButton(
-                onClick = {
-                    onUiEvent(VoiceCallScreenEvent.ToggleMuteRemote(user.id, !user.isMuted))
-                },
-                modifier = Modifier.padding(horizontal = 12.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = if (user.isMuted) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
-                    contentColor = if (user.isMuted) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Call,
-                    contentDescription = null
+                Text(
+                    "${user.volume}",
+                    modifier = Modifier.padding(start = 8.dp)
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun VoiceCallScreenPreview() {
+    AgoraTheme {
+        VoiceCallScreen(
+            rememberNavController(),
+            VoiceCallScreenState(
+                isLocalMuted = true,
+                activeCall = ActiveCall(
+                    "test-channel",
+                    0,
+                    listOf(User(0, true, 100))
+                )
+            )
+        ) {}
     }
 }

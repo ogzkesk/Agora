@@ -3,15 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!--Optional permissions-->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
-    <!-- For devices running Android 12 (API level 32) or higher and integrating Agora Voice SDK version v4.1.0 or lower, you also need to add the following permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
-    <!-- For Android 12 or higher, the following permissions are also required -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
 
@@ -30,6 +27,8 @@
             android:name=".ui.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait"
             android:theme="@style/Theme.Agora">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

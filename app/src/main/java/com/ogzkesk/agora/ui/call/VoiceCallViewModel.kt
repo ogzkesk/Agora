@@ -42,6 +42,9 @@ class VoiceCallViewModel @Inject constructor(
 
             is VoiceCallScreenEvent.ToggleMuteLocal -> {
                 audioController.toggleLocalAudio(event.value)
+                updateState {
+                    it.copy(isLocalMuted = event.value)
+                }
             }
 
             is VoiceCallScreenEvent.ToggleMuteRemote -> {
