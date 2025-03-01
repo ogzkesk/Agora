@@ -1,6 +1,6 @@
 package com.ogzkesk.agora.model
 
-data class ActiveCall(
+data class VoiceCall(
     val channelName: String,
     val channelId: Int,
     val remoteUsers: List<User>

@@ -7,16 +7,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -24,6 +27,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,21 +35,46 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.ogzkesk.agora.model.ActiveCall
+import com.ogzkesk.agora.model.VoiceCall
 import com.ogzkesk.agora.model.User
 import com.ogzkesk.agora.ui.theme.AgoraTheme
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoiceCallScreen(
     navController: NavHostController,
     state: VoiceCallScreenState,
     onUiEvent: (VoiceCallScreenEvent) -> Unit
 ) {
-    LaunchedEffect(state.activeCall) {
-        if (state.activeCall == null) navController.popBackStack()
+    val coroutineScope = rememberCoroutineScope()
+    LaunchedEffect(state.voiceCall) {
+        if (state.voiceCall == null) navController.popBackStack()
     }
 
     Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(state.voiceCall?.channelName.orEmpty())
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                onUiEvent(VoiceCallScreenEvent.EndCall)
+                                navController.popBackStack()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
+                }
+            )
+        },
         bottomBar = {
             BottomAppBar {
                 Row(
@@ -94,13 +123,14 @@ fun VoiceCallScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(paddingValues)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .fillMaxSize(),
         ) {
-            state.activeCall?.remoteUsers?.forEach { user ->
+            items(
+                items = state.voiceCall?.remoteUsers.orEmpty()
+            ) { user ->
                 RemoteUser(
                     user = user,
                     onUiEvent = onUiEvent
@@ -185,7 +215,7 @@ private fun VoiceCallScreenPreview() {
             rememberNavController(),
             VoiceCallScreenState(
                 isLocalMuted = true,
-                activeCall = ActiveCall(
+                voiceCall = VoiceCall(
                     "test-channel",
                     0,
                     listOf(User(0, true, 100))

@@ -8,13 +8,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -50,12 +53,10 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        resultLauncher.launch(getRequiredPermissions())
-    }
-
-    LaunchedEffect(state.activeCall) {
-        if (state.activeCall != null) navController.navigate(VoiceCallScreenRoute)
+    LaunchedEffect(state.activeVoiceCall) {
+        if (state.activeVoiceCall != null) {
+            navController.navigate(VoiceCallScreenRoute)
+        }
     }
 
     Scaffold(
@@ -70,19 +71,41 @@ fun MainScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            TextField(
+                value = state.channelName,
+                onValueChange = {
+                    onUiEvent(MainScreenEvent.ChannelNameChangedEvent(it))
+                },
+                placeholder = {
+                    Text("Enter channel name")
+                },
+                enabled = !state.useTemporaryToken,
+                modifier = Modifier.padding(8.dp)
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("Use temporary token")
+                Checkbox(
+                    checked = state.useTemporaryToken,
+                    onCheckedChange = {
+                        onUiEvent(MainScreenEvent.ToggleTemporaryToken(it))
+                    }
+                )
+            }
+
             Button(
                 onClick = {
                     if (checkRequiredPermissions(context)) {
                         onUiEvent(MainScreenEvent.StartVoiceCalling)
                     } else {
-                        coroutineScope.launch {
-                            snackBarHostState.showSnackbar("Required permissions not granted")
-                            resultLauncher.launch(getRequiredPermissions())
-                        }
+                        resultLauncher.launch(getRequiredPermissions())
                     }
                 },
-                modifier = Modifier
-                    .padding(12.dp)
+                modifier = Modifier.padding(8.dp)
             ) {
                 Text("Start Voice Calling")
             }

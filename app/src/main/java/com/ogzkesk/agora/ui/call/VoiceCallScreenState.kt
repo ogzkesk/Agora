@@ -1,9 +1,9 @@
 package com.ogzkesk.agora.ui.call
 
-import com.ogzkesk.agora.model.ActiveCall
+import com.ogzkesk.agora.model.VoiceCall
 
 data class VoiceCallScreenState(
-    val activeCall: ActiveCall? = null,
+    val voiceCall: VoiceCall? = null,
     val isLocalMuted: Boolean = false,
     val localVolume: Int = 100
 )

@@ -1,7 +1,7 @@
 package com.ogzkesk.agora.di
 
 import android.content.Context
-import com.ogzkesk.agora.controller.AudioController
+import com.ogzkesk.agora.audio.AudioController
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
