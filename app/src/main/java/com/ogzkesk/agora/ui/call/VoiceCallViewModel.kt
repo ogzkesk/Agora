@@ -20,7 +20,7 @@ class VoiceCallViewModel @Inject constructor(
         }
     }
 
-    override fun onUiEvent(event: VoiceCallScreenEvent) {
+    override fun onEvent(event: VoiceCallScreenEvent) {
         when (event) {
             VoiceCallScreenEvent.EndCall -> {
                 audioController.leaveVoiceCalling()

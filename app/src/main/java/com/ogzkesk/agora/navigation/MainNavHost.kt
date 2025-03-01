@@ -27,7 +27,7 @@ fun MainNavHost(
             MainScreen(
                 navController = navController,
                 state = state,
-                onUiEvent = viewModel::onUiEvent
+                onEvent = viewModel::onEvent
             )
         }
         composable<VoiceCallScreenRoute> {
@@ -36,7 +36,7 @@ fun MainNavHost(
             VoiceCallScreen(
                 navController = navController,
                 state = state,
-                onUiEvent = viewModel::onUiEvent
+                onUiEvent = viewModel::onEvent
             )
         }
     }

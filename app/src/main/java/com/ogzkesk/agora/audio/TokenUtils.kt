@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -30,25 +31,24 @@ object TokenUtils {
     fun generate(
         channelName: String,
         uid: Int,
-        onGetToken: OnTokenGenCallback<String?>?
+        onGetToken: OnTokenGenCallback<String?>?,
+        onException: OnTokenGenCallback<Exception>
     ) {
-        generate(
+        gen(
             channelName = channelName,
             uid = uid,
             onGetToken = { ret: String? ->
                 if (onGetToken != null) {
                     runOnUiThread {
-                        onGetToken.onTokenGen(ret)
+                        onGetToken.result(ret)
                     }
                 }
             },
             onError = { ret: Exception? ->
-                println("Exception on token request: ${ret?.localizedMessage}")
-                ret?.printStackTrace()
-                if (onGetToken != null) {
-                    runOnUiThread {
-                        onGetToken.onTokenGen(null)
-                    }
+                ret?.let {
+                    onException.result(it)
+                    it.printStackTrace()
+                    println("Exception on token request: ${it.localizedMessage}")
                 }
             }
         )
@@ -62,14 +62,14 @@ object TokenUtils {
         }
     }
 
-    private fun generate(
+    private fun gen(
         channelName: String,
         uid: Int,
         onGetToken: OnTokenGenCallback<String>?,
         onError: OnTokenGenCallback<Exception>?
     ) {
         if (channelName.isEmpty()) {
-            onError?.onTokenGen(IllegalArgumentException("appId=$APP_ID, certificate=$APP_CERTIFICATE, channelName=$channelName"))
+            onError?.result(IllegalArgumentException("Channel name cannot be empty or use temporary token"))
             return
         }
         val postBody = JSONObject()
@@ -83,10 +83,8 @@ object TokenUtils {
             postBody.put("type", 1) // 1: RTC Token ; 2: RTM Token
             postBody.put("uid", uid.toString() + "")
         } catch (e: JSONException) {
-            onError?.onTokenGen(e)
+            onError?.result(e)
         }
-
-        println("requestBody -->" + postBody.toString())
 
         val request: Request = Request.Builder()
             .url("https://service.agora.io/toolbox-global/v1/token/generate")
@@ -95,13 +93,13 @@ object TokenUtils {
             .build()
         client.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                onError?.onTokenGen(e)
+                onError?.result(e)
             }
 
             @Throws(IOException::class)
             override fun onResponse(call: Call, response: Response) {
                 if (!response.isSuccessful) {
-                    onError?.onTokenGen(IOException("Request failed with code: " + response.code + " " + response.message))
+                    onError?.result(IOException("Request failed with code: " + response.code + " " + response.message))
                     return
                 }
                 val body = response.body
@@ -111,10 +109,10 @@ object TokenUtils {
                             val jsonObject = JSONObject(it.string())
                             val data = jsonObject.optJSONObject("data")
                             val token = Objects.requireNonNull(data).optString("token")
-                            onGetToken?.onTokenGen(token)
+                            onGetToken?.result(token)
                         }
                     } catch (e: Exception) {
-                        onError?.onTokenGen(e)
+                        onError?.result(e)
                     }
                 }
             }
@@ -122,6 +120,6 @@ object TokenUtils {
     }
 
     fun interface OnTokenGenCallback<T> {
-        fun onTokenGen(ret: T)
+        fun result(ret: T)
     }
 }

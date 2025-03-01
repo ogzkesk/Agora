@@ -1,8 +1,8 @@
 package com.ogzkesk.agora.audio
 
 import android.content.Context
-import com.ogzkesk.agora.model.VoiceCall
 import com.ogzkesk.agora.model.User
+import com.ogzkesk.agora.model.VoiceCall
 import io.agora.rtc2.ChannelMediaOptions
 import io.agora.rtc2.Constants
 import io.agora.rtc2.IRtcEngineEventHandler
@@ -77,38 +77,44 @@ class AudioController(
     }
 
     fun startVoiceCalling(
-        // userId "0" creates random uid for testing purpose, should generated from backend.
-        uid: Int = 0
-    ) {
-        println("startVoice with temp")
-        val options = getDefaultChannelOptions()
-        val res = engine?.joinChannel(
-            TokenUtils.TEMPORARY_TOKEN,
-            TokenUtils.TEST_CHANNEL_NAME,
-            uid,
-            options
-        )
-        if (res != null && res != 0) {
-            val errorMsg = RtcEngine.getErrorDescription(abs(res))
-            println("Error -> $errorMsg")
-        }
-    }
-
-    fun startVoiceCalling(
-        // token and channelName should generated from backend.
+        useTemporaryToken: Boolean,
+        // channelName should generated from backend.
         channelName: String,
         // userId "0" creates random uid for testing purpose, should generated from backend.
-        uid: Int
+        uid: Int,
+        onError: (String) -> Unit
     ) {
-        TokenUtils.generate(channelName, uid) { token ->
-            token?.let {
-                val options = getDefaultChannelOptions()
-                val res = engine?.joinChannel(token, channelName, uid, options)
-                if (res != null && res != 0) {
-                    val errorMsg = RtcEngine.getErrorDescription(abs(res))
-                    println("Error -> $errorMsg")
-                }
+        val options = getDefaultChannelOptions()
+        if (useTemporaryToken) {
+            val res = engine?.joinChannel(
+                TokenUtils.TEMPORARY_TOKEN,
+                TokenUtils.TEST_CHANNEL_NAME,
+                uid,
+                options
+            )
+            if (res != null && res != 0) {
+                val errorMsg = RtcEngine.getErrorDescription(abs(res))
+                onError(errorMsg)
+                println("Error -> $errorMsg")
             }
+        } else {
+            TokenUtils.generate(
+                channelName,
+                uid,
+                { token ->
+                    token?.let {
+                        val res = engine?.joinChannel(token, channelName, uid, options)
+                        if (res != null && res != 0) {
+                            val errorMsg = RtcEngine.getErrorDescription(abs(res))
+                            onError(errorMsg)
+                            println("Error -> $errorMsg")
+                        }
+                    }
+                },
+                { exc ->
+                    onError(exc.message.toString())
+                }
+            )
         }
     }
 

@@ -16,25 +16,40 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             audioController.activeCall.collect { call ->
                 updateState {
-                    it.copy(activeVoiceCall = call)
+                    it.copy(activeVoiceCall = call, isLoading = false)
                 }
             }
         }
     }
 
-    override fun onUiEvent(event: MainScreenEvent) {
+    override fun onEvent(event: MainScreenEvent) {
         when (event) {
-            is MainScreenEvent.ToggleTemporaryToken -> updateState { it.copy(useTemporaryToken = event.value) }
-            is MainScreenEvent.ChannelNameChangedEvent -> updateState { it.copy(channelName = event.value) }
             is MainScreenEvent.StartVoiceCalling -> {
-                if (state.value.useTemporaryToken) {
-                    audioController.startVoiceCalling()
-                } else {
-                    audioController.startVoiceCalling(
-                        channelName = state.value.channelName,
-                        uid = 0
-                    )
+                updateState {
+                    it.copy(isLoading = true)
                 }
+
+                audioController.startVoiceCalling(
+                    useTemporaryToken = state.value.useTemporaryToken,
+                    channelName = state.value.channelName,
+                    uid = 0
+                ) { error ->
+                    updateState {
+                        it.copy(isLoading = false, errorMsg = error)
+                    }
+                }
+            }
+
+            is MainScreenEvent.ToggleTemporaryToken -> updateState {
+                it.copy(useTemporaryToken = event.value)
+            }
+
+            is MainScreenEvent.ChannelNameChangedEvent -> updateState {
+                it.copy(channelName = event.value)
+            }
+
+            MainScreenEvent.ResetErrorState -> updateState {
+                it.copy(errorMsg = null)
             }
         }
     }

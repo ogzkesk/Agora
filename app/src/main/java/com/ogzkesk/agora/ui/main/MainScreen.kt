@@ -6,14 +6,18 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -24,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,7 +43,7 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     navController: NavHostController,
     state: MainScreenState,
-    onUiEvent: (MainScreenEvent) -> Unit
+    onEvent: (MainScreenEvent) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -53,9 +58,13 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(state.activeVoiceCall) {
+    LaunchedEffect(state) {
         if (state.activeVoiceCall != null) {
             navController.navigate(VoiceCallScreenRoute)
+        }
+        if (state.errorMsg != null) {
+            snackBarHostState.showSnackbar(state.errorMsg, duration = SnackbarDuration.Short)
+            onEvent(MainScreenEvent.ResetErrorState)
         }
     }
 
@@ -74,7 +83,7 @@ fun MainScreen(
             TextField(
                 value = state.channelName,
                 onValueChange = {
-                    onUiEvent(MainScreenEvent.ChannelNameChangedEvent(it))
+                    onEvent(MainScreenEvent.ChannelNameChangedEvent(it))
                 },
                 placeholder = {
                     Text("Enter channel name")
@@ -92,7 +101,7 @@ fun MainScreen(
                 Checkbox(
                     checked = state.useTemporaryToken,
                     onCheckedChange = {
-                        onUiEvent(MainScreenEvent.ToggleTemporaryToken(it))
+                        onEvent(MainScreenEvent.ToggleTemporaryToken(it))
                     }
                 )
             }
@@ -100,7 +109,7 @@ fun MainScreen(
             Button(
                 onClick = {
                     if (checkRequiredPermissions(context)) {
-                        onUiEvent(MainScreenEvent.StartVoiceCalling)
+                        onEvent(MainScreenEvent.StartVoiceCalling)
                     } else {
                         resultLauncher.launch(getRequiredPermissions())
                     }
@@ -108,6 +117,17 @@ fun MainScreen(
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text("Start Voice Calling")
+            }
+        }
+
+        if (state.isLoading) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3F)),
+                Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }
@@ -138,7 +158,7 @@ fun MainScreenPreview() {
         MainScreen(
             navController = rememberNavController(),
             state = MainScreenState(),
-            onUiEvent = {}
+            onEvent = {}
         )
     }
 }
