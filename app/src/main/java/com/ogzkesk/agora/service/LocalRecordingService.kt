@@ -16,6 +16,7 @@ import com.ogzkesk.agora.ui.MainActivity
 
 class LocalRecordingService : Service() {
 
+
     override fun onCreate() {
         super.onCreate()
         val notification = getDefaultNotification()
@@ -30,6 +31,7 @@ class LocalRecordingService : Service() {
             } else {
                 this.startForeground(NOTIFICATION_ID, notification)
             }
+            isRunning = true
         } catch (ex: Exception) {
             ex.printStackTrace()
         }
@@ -71,23 +73,25 @@ class LocalRecordingService : Service() {
             .build()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        isRunning = false
+    }
+
     companion object {
         const val NOTIFICATION_ID = 1234567800
         const val CHANNEL_ID = "audio_channel_id"
+        private var isRunning: Boolean = false
 
         fun start(context: Context) {
-            val serviceRef = LocalRecordingService::class.java
-            val isServiceRunning = context.isServiceRunning(serviceRef)
-            if (!isServiceRunning) {
-                val serviceIntent = Intent(context, serviceRef)
+            if (!isRunning) {
+                val serviceIntent = Intent(context, LocalRecordingService::class.java)
                 context.startForegroundService(serviceIntent)
             }
         }
 
         fun stop(context: Context) {
-            val serviceRef = LocalRecordingService::class.java
-            val isServiceRunning = context.isServiceRunning(serviceRef)
-            if (isServiceRunning) {
+            if (isRunning) {
                 val serviceIntent = Intent(context, LocalRecordingService::class.java)
                 context.stopService(serviceIntent)
             }
