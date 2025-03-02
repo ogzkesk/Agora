@@ -1,6 +1,5 @@
 package com.ogzkesk.agora.ui.call
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,12 +64,10 @@ fun VoiceCallScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
-                val serviceIntent = Intent(context, LocalRecordingService::class.java)
-                context.startForegroundService(serviceIntent)
+                LocalRecordingService.start(context)
             }
-            if(event == Lifecycle.Event.ON_RESUME){
-                val serviceIntent = Intent(context, LocalRecordingService::class.java)
-                context.stopService(serviceIntent)
+            if (event == Lifecycle.Event.ON_RESUME) {
+                LocalRecordingService.stop(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

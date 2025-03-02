@@ -1,6 +1,5 @@
 package com.ogzkesk.agora.ui
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +8,7 @@ import com.ogzkesk.agora.navigation.MainNavHost
 import com.ogzkesk.agora.service.LocalRecordingService
 import com.ogzkesk.agora.ui.theme.AgoraTheme
 import dagger.hilt.android.AndroidEntryPoint
+
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -24,7 +24,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        val serviceIntent = Intent(this, LocalRecordingService::class.java)
-        stopService(serviceIntent)
+        LocalRecordingService.start(this)
     }
 }

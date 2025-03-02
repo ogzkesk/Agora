@@ -74,5 +74,23 @@ class LocalRecordingService : Service() {
     companion object {
         const val NOTIFICATION_ID = 1234567800
         const val CHANNEL_ID = "audio_channel_id"
+
+        fun start(context: Context) {
+            val serviceRef = LocalRecordingService::class.java
+            val isServiceRunning = context.isServiceRunning(serviceRef)
+            if (!isServiceRunning) {
+                val serviceIntent = Intent(context, serviceRef)
+                context.startForegroundService(serviceIntent)
+            }
+        }
+
+        fun stop(context: Context) {
+            val serviceRef = LocalRecordingService::class.java
+            val isServiceRunning = context.isServiceRunning(serviceRef)
+            if (isServiceRunning) {
+                val serviceIntent = Intent(context, LocalRecordingService::class.java)
+                context.stopService(serviceIntent)
+            }
+        }
     }
 }
