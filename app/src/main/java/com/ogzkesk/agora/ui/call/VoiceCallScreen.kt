@@ -1,5 +1,6 @@
 package com.ogzkesk.agora.ui.call
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,17 +27,23 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.ogzkesk.agora.model.VoiceCall
 import com.ogzkesk.agora.model.User
+import com.ogzkesk.agora.model.VoiceCall
+import com.ogzkesk.agora.service.LocalRecordingService
 import com.ogzkesk.agora.ui.theme.AgoraTheme
 import kotlinx.coroutines.launch
 
@@ -47,9 +54,29 @@ fun VoiceCallScreen(
     state: VoiceCallScreenState,
     onUiEvent: (VoiceCallScreenEvent) -> Unit
 ) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(state.voiceCall) {
         if (state.voiceCall == null) navController.popBackStack()
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                val serviceIntent = Intent(context, LocalRecordingService::class.java)
+                context.startForegroundService(serviceIntent)
+            }
+            if(event == Lifecycle.Event.ON_RESUME){
+                val serviceIntent = Intent(context, LocalRecordingService::class.java)
+                context.stopService(serviceIntent)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     Scaffold(
