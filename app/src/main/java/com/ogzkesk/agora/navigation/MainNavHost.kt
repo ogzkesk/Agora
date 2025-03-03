@@ -8,8 +8,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.ogzkesk.agora.ui.call.VoiceCallScreen
-import com.ogzkesk.agora.ui.call.VoiceCallViewModel
+import com.ogzkesk.agora.ui.voice.VoiceCallScreen
+import com.ogzkesk.agora.ui.voice.VoiceCallViewModel
 import com.ogzkesk.agora.ui.main.MainScreen
 import com.ogzkesk.agora.ui.main.MainViewModel
 
@@ -36,7 +36,7 @@ fun MainNavHost(
             VoiceCallScreen(
                 navController = navController,
                 state = state,
-                onUiEvent = viewModel::onEvent
+                onEvent = viewModel::onEvent
             )
         }
     }

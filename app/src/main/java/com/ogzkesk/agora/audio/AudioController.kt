@@ -1,5 +1,6 @@
 package com.ogzkesk.agora.audio
 
+import com.ogzkesk.agora.model.RemoteAudioState
 import com.ogzkesk.agora.model.User
 import com.ogzkesk.agora.model.VoiceCall
 import io.agora.rtc2.ChannelMediaOptions
@@ -15,30 +16,26 @@ class AudioController(
     private val engine: RtcEngine
 ) {
     private val mutableVoiceCall = MutableStateFlow<VoiceCall?>(null)
-    val activeCall = mutableVoiceCall.asStateFlow()
+    val activeCallState = mutableVoiceCall.asStateFlow()
 
     init {
         engine.addHandler(
             object : IRtcEngineEventHandler() {
                 override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
                     super.onJoinChannelSuccess(channel, uid, elapsed)
-                    mutableVoiceCall.update {
-                        VoiceCall(channel.toString(), uid, emptyList())
-                    }
+                    mutableVoiceCall.update { VoiceCall.create(channel.toString(), uid) }
                     println("Joined channel: $channel uid: $uid elapsed: $elapsed")
                 }
 
                 override fun onLeaveChannel(stats: RtcStats?) {
                     super.onLeaveChannel(stats)
-                    mutableVoiceCall.update {
-                        null
-                    }
+                    mutableVoiceCall.update { null }
                     println("onLeaveChannel users: ${stats?.users} totalDuration: ${stats?.totalDuration}")
                 }
 
                 override fun onUserJoined(uid: Int, elapsed: Int) {
-                    mutableVoiceCall.value = activeCall.value?.copy(
-                        remoteUsers = activeCall.value?.remoteUsers?.plus(User.create(uid))
+                    mutableVoiceCall.value = activeCallState.value?.copy(
+                        remoteUsers = activeCallState.value?.remoteUsers?.plus(User.create(uid))
                             ?: emptyList()
                     )
                     println("User joined: $uid")
@@ -46,9 +43,9 @@ class AudioController(
 
                 override fun onUserOffline(uid: Int, reason: Int) {
                     super.onUserOffline(uid, reason)
-                    val user = activeCall.value?.remoteUsers?.find { it.id == uid } ?: return
-                    mutableVoiceCall.value = activeCall.value?.copy(
-                        remoteUsers = activeCall.value?.remoteUsers?.minus(user) ?: emptyList()
+                    val user = activeCallState.value?.remoteUsers?.find { it.id == uid } ?: return
+                    mutableVoiceCall.value = activeCallState.value?.copy(
+                        remoteUsers = activeCallState.value?.remoteUsers?.minus(user) ?: emptyList()
                     )
                     println("User Offline: $uid")
                 }
@@ -60,7 +57,28 @@ class AudioController(
                     elapsed: Int
                 ) {
                     super.onRemoteAudioStateChanged(uid, state, reason, elapsed)
+                    mutableVoiceCall.update {
+                        it?.copy(
+                            remoteAudioState = RemoteAudioState.create(uid, state, reason, elapsed)
+                        )
+                    }
                     println("onRemoteAudioStateChanged->$uid, state->$state, reason->$reason")
+                }
+
+                override fun onTokenPrivilegeWillExpire(token: String?) {
+                    super.onTokenPrivilegeWillExpire(token)
+                    // if token expires request new token from server.
+//                    engine.renewToken()
+                }
+
+                override fun onAudioRouteChanged(routing: Int) {
+                    super.onAudioRouteChanged(routing)
+                    CommunicationMode.entries.find { it.route == routing }
+                        ?.let { mode ->
+                            mutableVoiceCall.update { it?.copy(communicationMode = mode) }
+                            println("onAudioRouteChanged-> $mode")
+                        }
+                        ?: println("not implemented yet")
                 }
             }
         )
@@ -88,6 +106,7 @@ class AudioController(
                 println("Error -> $errorMsg")
             }
         } else {
+            // uses agora server to generate token.
             TokenUtils.generate(
                 channelName,
                 uid,
@@ -110,10 +129,12 @@ class AudioController(
 
     fun leaveVoiceCalling() {
         engine.leaveChannel()
+        mutableVoiceCall.update { null }
     }
 
     fun toggleLocalAudio(value: Boolean) {
         engine.muteLocalAudioStream(value)
+        mutableVoiceCall.update { it?.copy(isLocalMuted = value) }
     }
 
     fun toggleRemoteAudio(uid: Int, value: Boolean) {
@@ -129,6 +150,7 @@ class AudioController(
 
     fun setLocalVolume(volume: Int) {
         engine.adjustRecordingSignalVolume(volume)
+        mutableVoiceCall.update { it?.copy(localVolume = volume) }
     }
 
     fun setRemoteVolume(uid: Int, volume: Int) {
@@ -142,11 +164,21 @@ class AudioController(
         }
     }
 
+    fun setCommunicationMode(mode: CommunicationMode) {
+        engine.setRouteInCommunicationMode(mode.route)
+        mutableVoiceCall.update { it?.copy(communicationMode = mode) }
+    }
+
     private fun getDefaultChannelOptions(): ChannelMediaOptions {
         return ChannelMediaOptions().apply {
             clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
             channelProfile = Constants.CHANNEL_PROFILE_COMMUNICATION
             publishMicrophoneTrack = true
         }
+    }
+
+    enum class CommunicationMode(val route: Int) {
+        EARPIECE(Constants.AUDIO_ROUTE_EARPIECE),
+        SPEAKER(Constants.AUDIO_ROUTE_SPEAKERPHONE);
     }
 }

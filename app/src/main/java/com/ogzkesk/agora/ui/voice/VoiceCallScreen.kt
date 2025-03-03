@@ -1,5 +1,6 @@
-package com.ogzkesk.agora.ui.call
+package com.ogzkesk.agora.ui.voice
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,8 +12,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -40,6 +44,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.ogzkesk.agora.audio.AudioController
 import com.ogzkesk.agora.model.User
 import com.ogzkesk.agora.model.VoiceCall
 import com.ogzkesk.agora.service.LocalRecordingService
@@ -51,11 +56,16 @@ import kotlinx.coroutines.launch
 fun VoiceCallScreen(
     navController: NavHostController,
     state: VoiceCallScreenState,
-    onUiEvent: (VoiceCallScreenEvent) -> Unit
+    onEvent: (VoiceCallScreenEvent) -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
+
+    BackHandler(true) {
+        onEvent(VoiceCallScreenEvent.EndCall)
+        navController.popBackStack()
+    }
 
     LaunchedEffect(state.voiceCall) {
         if (state.voiceCall == null) navController.popBackStack()
@@ -86,7 +96,7 @@ fun VoiceCallScreen(
                     IconButton(
                         onClick = {
                             coroutineScope.launch {
-                                onUiEvent(VoiceCallScreenEvent.EndCall)
+                                onEvent(VoiceCallScreenEvent.EndCall)
                                 navController.popBackStack()
                             }
                         }
@@ -107,41 +117,56 @@ fun VoiceCallScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     FilledTonalIconButton(
-                        onClick = { onUiEvent(VoiceCallScreenEvent.EndCall) },
+                        onClick = { onEvent(VoiceCallScreenEvent.EndCall) },
                         modifier = Modifier.padding(horizontal = 12.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            imageVector = Icons.Default.PowerSettingsNew,
                             contentDescription = null
                         )
                     }
+
                     FilledTonalIconButton(
                         onClick = {
-                            onUiEvent(VoiceCallScreenEvent.ToggleMuteLocal(!state.isLocalMuted))
+                            onEvent(
+                                VoiceCallScreenEvent.ToggleCommunicationMode(
+                                    if (state.voiceCall?.communicationMode == AudioController.CommunicationMode.SPEAKER)
+                                        AudioController.CommunicationMode.EARPIECE
+                                    else
+                                        AudioController.CommunicationMode.SPEAKER
+                                )
+                            )
                         },
                         modifier = Modifier.padding(horizontal = 12.dp),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = if (state.isLocalMuted) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
-                            contentColor = if (state.isLocalMuted) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
-                        )
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Call,
+                            imageVector = if (state.voiceCall?.communicationMode == AudioController.CommunicationMode.SPEAKER)
+                                Icons.AutoMirrored.Filled.VolumeOff
+                            else
+                                Icons.AutoMirrored.Filled.VolumeUp,
+                            contentDescription = null
+                        )
+                    }
+
+                    FilledTonalIconButton(
+                        onClick = {
+                            onEvent(VoiceCallScreenEvent.ToggleMuteLocal(state.voiceCall?.isLocalMuted == false))
+                        },
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                    ) {
+                        Icon(
+                            imageVector = if (state.voiceCall?.isLocalMuted == true) Icons.Default.Mic else Icons.Default.MicOff,
                             contentDescription = null
                         )
                     }
 
                     Slider(
-                        value = state.localVolume.toFloat(),
+                        value = state.voiceCall?.localVolume?.toFloat() ?: 100F,
                         valueRange = 0f..100f,
                         onValueChange = {
-                            onUiEvent(VoiceCallScreenEvent.LocalVolumeChange(it.toInt()))
+                            onEvent(VoiceCallScreenEvent.LocalVolumeChange(it.toInt()))
                         },
                         modifier = Modifier.width(120.dp)
-                    )
-                    Text(
-                        "${state.localVolume}",
-                        modifier = Modifier.padding(start = 8.dp)
                     )
                 }
             }
@@ -157,7 +182,7 @@ fun VoiceCallScreen(
             ) { user ->
                 RemoteUser(
                     user = user,
-                    onUiEvent = onUiEvent
+                    onUiEvent = onEvent
                 )
             }
         }
@@ -200,7 +225,7 @@ fun RemoteUser(
                     )
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Call,
+                        imageVector = if (user.isMuted) Icons.Default.Mic else Icons.Default.MicOff,
                         contentDescription = null
                     )
                 }
@@ -238,12 +263,7 @@ private fun VoiceCallScreenPreview() {
         VoiceCallScreen(
             rememberNavController(),
             VoiceCallScreenState(
-                isLocalMuted = true,
-                voiceCall = VoiceCall(
-                    "test-channel",
-                    0,
-                    listOf(User(0, true, 100))
-                )
+                voiceCall = VoiceCall.create("test-channel", 0)
             )
         ) {}
     }

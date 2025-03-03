@@ -74,18 +74,18 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.material.icons.extended)
 
     implementation(libs.hilt.android)
     implementation(libs.retrofit)
     implementation(libs.logging.interceptor)
     implementation(libs.coil.compose)
 
-
     ksp(libs.hilt.android.compiler)
     ksp(libs.androidx.room.compiler)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
-    implementation("io.agora.rtc:voice-sdk:4.5.0")
+    implementation(libs.voice.sdk)
 
-    debugImplementation("androidx.compose.ui:ui-tooling")
+    debugImplementation(libs.ui.tooling)
 }

@@ -42,7 +42,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
-    navController: NavHostController, state: MainScreenState, onEvent: (MainScreenEvent) -> Unit
+    navController: NavHostController,
+    state: MainScreenState,
+    onEvent: (MainScreenEvent) -> Unit
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -67,9 +69,11 @@ fun MainScreen(
         }
     }
 
-    Scaffold(snackbarHost = {
-        SnackbarHost(snackBarHostState)
-    }) { paddingValues ->
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackBarHostState)
+        }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -77,11 +81,16 @@ fun MainScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TextField(value = state.channelName, onValueChange = {
-                onEvent(MainScreenEvent.ChannelNameChangedEvent(it))
-            }, placeholder = {
-                Text("Enter channel name")
-            }, enabled = !state.useTemporaryToken, modifier = Modifier.padding(8.dp)
+            TextField(
+                value = state.channelName,
+                onValueChange = {
+                    onEvent(MainScreenEvent.ChannelNameChangedEvent(it))
+                },
+                placeholder = {
+                    Text("Enter channel name")
+                },
+                enabled = !state.useTemporaryToken,
+                modifier = Modifier.padding(8.dp)
             )
 
             Row(
@@ -90,9 +99,12 @@ fun MainScreen(
                 modifier = Modifier.padding(8.dp)
             ) {
                 Text("Use temporary token")
-                Checkbox(checked = state.useTemporaryToken, onCheckedChange = {
-                    onEvent(MainScreenEvent.ToggleTemporaryToken(it))
-                })
+                Checkbox(
+                    checked = state.useTemporaryToken,
+                    onCheckedChange = {
+                        onEvent(MainScreenEvent.ToggleTemporaryToken(it))
+                    }
+                )
             }
 
             Button(

@@ -7,3 +7,6 @@ object MainScreenRoute
 
 @Serializable
 object VoiceCallScreenRoute
+
+@Serializable
+object VideoCallScreenRoute

@@ -14,7 +14,7 @@ class MainViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            audioController.activeCall.collect { call ->
+            audioController.activeCallState.collect { call ->
                 updateState {
                     it.copy(activeVoiceCall = call, isLoading = false)
                 }
