@@ -1,4 +1,4 @@
-package com.ogzkesk.agora.model
+package com.ogzkesk.agora.enums
 
 enum class EngineError(val code: Int) {
     ERR_OK(0),

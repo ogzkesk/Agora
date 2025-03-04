@@ -2,7 +2,7 @@ package com.ogzkesk.agora.ui.main
 
 import androidx.lifecycle.viewModelScope
 import com.ogzkesk.agora.audio.AudioController
-import com.ogzkesk.agora.model.EngineError
+import com.ogzkesk.agora.enums.EngineError
 import com.ogzkesk.agora.mvi.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch

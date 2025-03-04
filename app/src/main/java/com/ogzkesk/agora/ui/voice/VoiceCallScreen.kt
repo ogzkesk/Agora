@@ -52,6 +52,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ogzkesk.agora.audio.AudioController
+import com.ogzkesk.agora.enums.CommunicationMode
+import com.ogzkesk.agora.enums.NoiseSuppressionMode
 import com.ogzkesk.agora.model.User
 import com.ogzkesk.agora.model.VoiceCall
 import com.ogzkesk.agora.service.LocalRecordingService
@@ -131,7 +133,7 @@ fun VoiceCallScreen(
                         expanded = popup,
                         onDismissRequest = { popup = false }
                     ) {
-                        AudioController.NoiseSuppressionMode.entries.forEach { mode ->
+                        NoiseSuppressionMode.entries.forEach { mode ->
                             val isActive = state.voiceCall?.let { it.noiseSuppressionMode == mode }
                             DropdownMenuItem(
                                 text = {
@@ -176,17 +178,17 @@ fun VoiceCallScreen(
                         onClick = {
                             onEvent(
                                 VoiceCallScreenEvent.ToggleCommunicationMode(
-                                    if (state.voiceCall?.communicationMode == AudioController.CommunicationMode.SPEAKER)
-                                        AudioController.CommunicationMode.EARPIECE
+                                    if (state.voiceCall?.communicationMode == CommunicationMode.SPEAKER)
+                                        CommunicationMode.EARPIECE
                                     else
-                                        AudioController.CommunicationMode.SPEAKER
+                                        CommunicationMode.SPEAKER
                                 )
                             )
                         },
                         modifier = Modifier.padding(horizontal = 12.dp),
                     ) {
                         Icon(
-                            imageVector = if (state.voiceCall?.communicationMode == AudioController.CommunicationMode.SPEAKER)
+                            imageVector = if (state.voiceCall?.communicationMode == CommunicationMode.SPEAKER)
                                 Icons.AutoMirrored.Filled.VolumeOff
                             else
                                 Icons.AutoMirrored.Filled.VolumeUp,

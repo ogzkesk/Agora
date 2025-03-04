@@ -1,13 +1,16 @@
 package com.ogzkesk.agora.model
 
 import com.ogzkesk.agora.audio.AudioController
+import com.ogzkesk.agora.enums.CommunicationMode
+import com.ogzkesk.agora.enums.EngineError
+import com.ogzkesk.agora.enums.NoiseSuppressionMode
 
 data class VoiceCall(
     val channelName: String,
     val channelId: Int,
     val remoteUsers: List<User>,
-    val communicationMode: AudioController.CommunicationMode,
-    val noiseSuppressionMode: AudioController.NoiseSuppressionMode?,
+    val communicationMode: CommunicationMode,
+    val noiseSuppressionMode: NoiseSuppressionMode?,
     val isLocalMuted: Boolean,
     val localVolume: Int,
     val remoteAudioState: RemoteAudioState?,
@@ -19,7 +22,7 @@ data class VoiceCall(
                 channelName = channelName,
                 channelId = uid,
                 remoteUsers = emptyList(),
-                communicationMode = AudioController.CommunicationMode.SPEAKER,
+                communicationMode = CommunicationMode.SPEAKER,
                 noiseSuppressionMode = null,
                 isLocalMuted = false,
                 localVolume = 100,
