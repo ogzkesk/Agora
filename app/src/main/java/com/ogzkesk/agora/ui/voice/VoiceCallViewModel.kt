@@ -25,7 +25,9 @@ class VoiceCallViewModel @Inject constructor(
             VoiceCallScreenEvent.EndCall -> audioController.leaveVoiceCalling()
             is VoiceCallScreenEvent.LocalVolumeChange -> audioController.setLocalVolume(event.volume)
             is VoiceCallScreenEvent.ToggleMuteLocal -> audioController.toggleLocalAudio(event.value)
-            is VoiceCallScreenEvent.ToggleCommunicationMode -> audioController.setCommunicationMode(event.mode)
+            is VoiceCallScreenEvent.ToggleCommunicationMode -> audioController.setCommunicationMode(
+                event.mode
+            )
 
             is VoiceCallScreenEvent.ToggleMuteRemote -> audioController.toggleRemoteAudio(
                 event.id,
@@ -35,6 +37,11 @@ class VoiceCallViewModel @Inject constructor(
             is VoiceCallScreenEvent.RemoteVolumeChange -> audioController.setRemoteVolume(
                 event.id,
                 event.volume
+            )
+
+            is VoiceCallScreenEvent.ToggleNoiseSuppressionMode -> audioController.setAINoiseSuppression(
+                event.enabled,
+                event.mode
             )
         }
     }

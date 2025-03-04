@@ -29,7 +29,7 @@ object AgoraModule {
     @Singleton
     fun provideRtcEngine(
         config: RtcEngineConfig
-    ) = try {
+    ): RtcEngine = try {
         RtcEngine.create(config)
     } catch (e: Exception) {
         throw RuntimeException("Error initializing RTC engine: ${e.message}")

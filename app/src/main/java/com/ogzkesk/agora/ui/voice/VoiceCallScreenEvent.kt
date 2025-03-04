@@ -9,5 +9,11 @@ sealed interface VoiceCallScreenEvent : ViewEvent {
     data class LocalVolumeChange(val volume: Int) : VoiceCallScreenEvent
     data class ToggleMuteLocal(val value: Boolean) : VoiceCallScreenEvent
     data class ToggleMuteRemote(val id: Int, val value: Boolean) : VoiceCallScreenEvent
-    data class ToggleCommunicationMode(val mode: AudioController.CommunicationMode) : VoiceCallScreenEvent
+    data class ToggleCommunicationMode(val mode: AudioController.CommunicationMode) :
+        VoiceCallScreenEvent
+
+    data class ToggleNoiseSuppressionMode(
+        val enabled: Boolean,
+        val mode: AudioController.NoiseSuppressionMode
+    ) : VoiceCallScreenEvent
 }

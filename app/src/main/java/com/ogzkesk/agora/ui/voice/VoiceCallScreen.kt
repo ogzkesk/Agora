@@ -24,7 +24,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -132,10 +131,24 @@ fun VoiceCallScreen(
                         expanded = popup,
                         onDismissRequest = { popup = false }
                     ) {
-                        repeat(5) {
+                        AudioController.NoiseSuppressionMode.entries.forEach { mode ->
+                            val isActive = state.voiceCall?.let { it.noiseSuppressionMode == mode }
                             DropdownMenuItem(
-                                text = { Text("Test-$it") },
-                                onClick = { }
+                                text = {
+                                    Text(
+                                        "Noise suppression: ${mode.name}",
+                                        color = if (isActive == true) Color.Green else Color.Unspecified
+                                    )
+                                },
+                                onClick = {
+                                    onEvent(
+                                        VoiceCallScreenEvent.ToggleNoiseSuppressionMode(
+                                            enabled = isActive == false,
+                                            mode = mode
+                                        )
+                                    )
+                                    popup = false
+                                }
                             )
                         }
                     }

@@ -183,6 +183,15 @@ class AudioController(
         mutableVoiceCall.update { it?.copy(communicationMode = mode) }
     }
 
+    fun setAINoiseSuppression(enabled: Boolean, mode: NoiseSuppressionMode) {
+        val result = engine.setAINSMode(enabled, mode.code)
+        if(result == 0){
+            mutableVoiceCall.update {
+                it?.copy(noiseSuppressionMode = if (enabled) mode else null)
+            }
+        }
+    }
+
     private fun getDefaultChannelOptions(): ChannelMediaOptions {
         return ChannelMediaOptions().apply {
             clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
@@ -194,5 +203,11 @@ class AudioController(
     enum class CommunicationMode(val route: Int) {
         EARPIECE(Constants.AUDIO_ROUTE_EARPIECE),
         SPEAKER(Constants.AUDIO_ROUTE_SPEAKERPHONE);
+    }
+
+    enum class NoiseSuppressionMode(val code: Int) {
+        BALANCE(0),
+        AGGRESSIVE(1),
+        AGGRESSIVE_LOW_LATENCY(2);
     }
 }
