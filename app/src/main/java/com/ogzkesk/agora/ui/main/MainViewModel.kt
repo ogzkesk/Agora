@@ -2,6 +2,7 @@ package com.ogzkesk.agora.ui.main
 
 import androidx.lifecycle.viewModelScope
 import com.ogzkesk.agora.audio.AudioController
+import com.ogzkesk.agora.model.EngineError
 import com.ogzkesk.agora.mvi.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -15,8 +16,19 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             audioController.activeCallState.collect { call ->
-                updateState {
-                    it.copy(activeVoiceCall = call, isLoading = false)
+                call?.let { voiceCall ->
+                    val errorMsg: String? = when (voiceCall.error) {
+                        EngineError.ERR_TOKEN_EXPIRED -> "Token is expired"
+                        EngineError.ERR_INVALID_TOKEN -> "Invalid token"
+                        else -> null
+                    }
+                    updateState {
+                        it.copy(
+                            activeVoiceCall = call,
+                            isLoading = false,
+                            errorMsg = errorMsg
+                        )
+                    }
                 }
             }
         }

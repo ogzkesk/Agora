@@ -24,9 +24,8 @@ object TokenUtils {
 
     const val APP_ID = "dd455c171eed4a1f8be5722b76b58b94"
     const val APP_CERTIFICATE = "f42317253faa42b48d7083c659a35c2e"
-    const val TEST_CHANNEL_NAME = "test-channel"
-    const val TEMPORARY_TOKEN =
-        "007eJxTYFBYLmKaF3Foqq+ixsxZxw9yGHF88eeJtz4vkJl612U/p4MCQ0qKialpsqG5YWpqikmiYZpFUqqpuZFRkrlZkqlFkqWJRfSh9IZARgYmHnNGRgYIBPF5GEpSi0t0kzMS8/JScxgYACDCHjQ="
+    const val TEST_CHANNEL_NAME = "temp-channel"
+    const val TEMPORARY_TOKEN = "007eJxTYJh396vaGYXj92ednxzSuXFi7doV81jXHdx3feXLKzvzd+S6KjCkpJiYmiYbmhumpqaYJBqmWSSlmpobGSWZmyWZWiRZmqz2OJ7eEMjI4Njxj4WRAQJBfB6GktTcAt3kjMS8vNQcBgYA8F8nSQ=="
 
     fun generate(
         channelName: String,

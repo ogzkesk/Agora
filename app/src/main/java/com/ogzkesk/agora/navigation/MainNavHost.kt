@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.ogzkesk.agora.model.VoiceCall
 import com.ogzkesk.agora.ui.voice.VoiceCallScreen
 import com.ogzkesk.agora.ui.voice.VoiceCallViewModel
 import com.ogzkesk.agora.ui.main.MainScreen

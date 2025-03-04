@@ -10,6 +10,7 @@ data class VoiceCall(
     val isLocalMuted: Boolean,
     val localVolume: Int,
     val remoteAudioState: RemoteAudioState?,
+    val error: EngineError?,
 ) {
     companion object {
         fun create(channelName: String, uid: Int): VoiceCall {
@@ -20,7 +21,8 @@ data class VoiceCall(
                 communicationMode = AudioController.CommunicationMode.SPEAKER,
                 isLocalMuted = false,
                 localVolume = 100,
-                remoteAudioState = null
+                remoteAudioState = null,
+                error = null
             )
         }
     }

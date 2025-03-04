@@ -1,5 +1,7 @@
 package com.ogzkesk.agora.audio
 
+import android.util.Log
+import com.ogzkesk.agora.model.EngineError
 import com.ogzkesk.agora.model.RemoteAudioState
 import com.ogzkesk.agora.model.User
 import com.ogzkesk.agora.model.VoiceCall
@@ -15,6 +17,7 @@ import kotlin.math.abs
 class AudioController(
     private val engine: RtcEngine
 ) {
+    private val TAG = this::class.java.name
     private val mutableVoiceCall = MutableStateFlow<VoiceCall?>(null)
     val activeCallState = mutableVoiceCall.asStateFlow()
 
@@ -24,13 +27,24 @@ class AudioController(
                 override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
                     super.onJoinChannelSuccess(channel, uid, elapsed)
                     mutableVoiceCall.update { VoiceCall.create(channel.toString(), uid) }
-                    println("Joined channel: $channel uid: $uid elapsed: $elapsed")
+                    Log.i(TAG, "Joined channel: $channel uid: $uid elapsed: $elapsed")
+                }
+
+                override fun onError(err: Int) {
+                    super.onError(err)
+                    mutableVoiceCall.update {
+                        it?.copy(error = EngineError.fromErrorCode(err))
+                    }
+                    Log.e(TAG, "Error code: $err")
                 }
 
                 override fun onLeaveChannel(stats: RtcStats?) {
                     super.onLeaveChannel(stats)
                     mutableVoiceCall.update { null }
-                    println("onLeaveChannel users: ${stats?.users} totalDuration: ${stats?.totalDuration}")
+                    Log.i(
+                        TAG,
+                        "onLeaveChannel users: ${stats?.users} totalDuration: ${stats?.totalDuration}"
+                    )
                 }
 
                 override fun onUserJoined(uid: Int, elapsed: Int) {
@@ -38,7 +52,7 @@ class AudioController(
                         remoteUsers = activeCallState.value?.remoteUsers?.plus(User.create(uid))
                             ?: emptyList()
                     )
-                    println("User joined: $uid")
+                    Log.i(TAG, "User joined: $uid")
                 }
 
                 override fun onUserOffline(uid: Int, reason: Int) {
@@ -47,7 +61,7 @@ class AudioController(
                     mutableVoiceCall.value = activeCallState.value?.copy(
                         remoteUsers = activeCallState.value?.remoteUsers?.minus(user) ?: emptyList()
                     )
-                    println("User Offline: $uid")
+                    Log.w(TAG, "User Offline: $uid")
                 }
 
                 override fun onRemoteAudioStateChanged(
@@ -62,7 +76,7 @@ class AudioController(
                             remoteAudioState = RemoteAudioState.create(uid, state, reason, elapsed)
                         )
                     }
-                    println("onRemoteAudioStateChanged->$uid, state->$state, reason->$reason")
+                    Log.i(TAG, "onRemoteAudioStateChanged->$uid, state->$state, reason->$reason")
                 }
 
                 override fun onTokenPrivilegeWillExpire(token: String?) {
@@ -76,9 +90,9 @@ class AudioController(
                     CommunicationMode.entries.find { it.route == routing }
                         ?.let { mode ->
                             mutableVoiceCall.update { it?.copy(communicationMode = mode) }
-                            println("onAudioRouteChanged-> $mode")
+                            Log.i(TAG, "onAudioRouteChanged-> $mode")
                         }
-                        ?: println("not implemented yet")
+                        ?: Log.i(TAG, "not implemented yet")
                 }
             }
         )
@@ -103,7 +117,7 @@ class AudioController(
             if (res != 0) {
                 val errorMsg = RtcEngine.getErrorDescription(abs(res))
                 onError(errorMsg)
-                println("Error -> $errorMsg")
+                Log.i(TAG, "Error -> $errorMsg")
             }
         } else {
             // uses agora server to generate token.
@@ -116,7 +130,7 @@ class AudioController(
                         if (res != 0) {
                             val errorMsg = RtcEngine.getErrorDescription(abs(res))
                             onError(errorMsg)
-                            println("Error -> $errorMsg")
+                            Log.i(TAG, "Error -> $errorMsg")
                         }
                     }
                 },

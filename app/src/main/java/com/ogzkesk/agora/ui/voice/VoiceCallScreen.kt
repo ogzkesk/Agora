@@ -16,11 +16,15 @@ import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,7 +36,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,6 +69,7 @@ fun VoiceCallScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val coroutineScope = rememberCoroutineScope()
+    var popup by remember { mutableStateOf(false) }
 
     BackHandler(true) {
         onEvent(VoiceCallScreenEvent.EndCall)
@@ -82,6 +91,7 @@ fun VoiceCallScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
+            LocalRecordingService.stop(context)
             lifecycleOwner.lifecycle.removeObserver(observer)
         }
     }
@@ -105,6 +115,29 @@ fun VoiceCallScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = null
                         )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            popup = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = null
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = popup,
+                        onDismissRequest = { popup = false }
+                    ) {
+                        repeat(5) {
+                            DropdownMenuItem(
+                                text = { Text("Test-$it") },
+                                onClick = { }
+                            )
+                        }
                     }
                 }
             )
