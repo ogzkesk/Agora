@@ -1,8 +1,7 @@
 package com.ogzkesk.agora.ui.voice
 
-import com.ogzkesk.agora.model.VoiceCall
+import com.ogzkesk.agora.lib.model.ActiveCall
 
 data class VoiceCallScreenState(
-    val voiceCall: VoiceCall? = null,
-
+    val activeCall: ActiveCall? = null,
 )

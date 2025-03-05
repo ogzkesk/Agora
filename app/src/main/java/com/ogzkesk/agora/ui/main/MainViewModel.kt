@@ -1,8 +1,9 @@
 package com.ogzkesk.agora.ui.main
 
 import androidx.lifecycle.viewModelScope
-import com.ogzkesk.agora.audio.AudioController
-import com.ogzkesk.agora.enums.EngineError
+import com.ogzkesk.agora.lib.CallCache
+import com.ogzkesk.agora.lib.controller.AudioController
+import com.ogzkesk.agora.lib.enums.EngineError
 import com.ogzkesk.agora.mvi.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -11,15 +12,16 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val audioController: AudioController,
+    private val callCache: CallCache,
 ) : ViewModel<MainScreenState, MainScreenEvent>(MainScreenState()) {
 
     init {
         viewModelScope.launch {
-            audioController.activeCallState.collect { call ->
+            callCache.stream().collect { call ->
                 println("call: $call")
                 updateState {
                     it.copy(
-                        activeVoiceCall = call,
+                        activeCall = call,
                         isLoading = false,
                         errorMsg = when (call?.error) {
                             EngineError.ERR_TOKEN_EXPIRED -> "Token is expired"

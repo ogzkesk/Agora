@@ -1,4 +1,4 @@
-package com.ogzkesk.agora.model
+package com.ogzkesk.agora.lib.model
 
 data class User(
     val id: Int,

@@ -1,4 +1,4 @@
-package com.ogzkesk.agora.enums
+package com.ogzkesk.agora.lib.enums
 
 enum class NetworkQuality(val code: Int) {
     QUALITY_UNKNOWN(0),

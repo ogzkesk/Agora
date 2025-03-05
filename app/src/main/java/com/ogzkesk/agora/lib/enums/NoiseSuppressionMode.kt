@@ -1,4 +1,4 @@
-package com.ogzkesk.agora.enums
+package com.ogzkesk.agora.lib.enums
 
 enum class NoiseSuppressionMode(val code: Int) {
     BALANCE(0),

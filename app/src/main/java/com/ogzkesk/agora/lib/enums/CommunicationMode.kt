@@ -1,4 +1,4 @@
-package com.ogzkesk.agora.enums
+package com.ogzkesk.agora.lib.enums
 
 enum class CommunicationMode(val route: Int) {
     EARPIECE(1),

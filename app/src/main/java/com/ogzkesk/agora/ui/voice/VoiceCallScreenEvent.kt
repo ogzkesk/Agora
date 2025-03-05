@@ -1,7 +1,7 @@
 package com.ogzkesk.agora.ui.voice
 
-import com.ogzkesk.agora.enums.CommunicationMode
-import com.ogzkesk.agora.enums.NoiseSuppressionMode
+import com.ogzkesk.agora.lib.enums.CommunicationMode
+import com.ogzkesk.agora.lib.enums.NoiseSuppressionMode
 import com.ogzkesk.agora.mvi.ViewEvent
 
 sealed interface VoiceCallScreenEvent : ViewEvent {

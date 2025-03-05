@@ -1,9 +1,9 @@
 package com.ogzkesk.agora.ui.main
 
-import com.ogzkesk.agora.model.VoiceCall
+import com.ogzkesk.agora.lib.model.ActiveCall
 
 data class MainScreenState(
-    val activeVoiceCall: VoiceCall? = null,
+    val activeCall: ActiveCall? = null,
     val useTemporaryToken: Boolean = false,
     val isLoading: Boolean = false,
     val errorMsg: String? = null,

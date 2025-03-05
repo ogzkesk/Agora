@@ -1,11 +1,10 @@
-package com.ogzkesk.agora.model
+package com.ogzkesk.agora.lib.model
 
-import com.ogzkesk.agora.audio.AudioController
-import com.ogzkesk.agora.enums.CommunicationMode
-import com.ogzkesk.agora.enums.EngineError
-import com.ogzkesk.agora.enums.NoiseSuppressionMode
+import com.ogzkesk.agora.lib.enums.CommunicationMode
+import com.ogzkesk.agora.lib.enums.EngineError
+import com.ogzkesk.agora.lib.enums.NoiseSuppressionMode
 
-data class VoiceCall(
+data class ActiveCall(
     val channelName: String,
     val channelId: Int,
     val remoteUsers: List<User>,
@@ -17,8 +16,8 @@ data class VoiceCall(
     val error: EngineError?,
 ) {
     companion object {
-        fun create(channelName: String, uid: Int): VoiceCall {
-            return VoiceCall(
+        fun create(channelName: String, uid: Int): ActiveCall {
+            return ActiveCall(
                 channelName = channelName,
                 channelId = uid,
                 remoteUsers = emptyList(),

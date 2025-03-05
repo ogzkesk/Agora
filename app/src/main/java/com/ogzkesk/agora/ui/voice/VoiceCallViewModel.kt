@@ -1,7 +1,8 @@
 package com.ogzkesk.agora.ui.voice
 
 import androidx.lifecycle.viewModelScope
-import com.ogzkesk.agora.audio.AudioController
+import com.ogzkesk.agora.lib.CallCache
+import com.ogzkesk.agora.lib.controller.AudioController
 import com.ogzkesk.agora.mvi.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -9,13 +10,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class VoiceCallViewModel @Inject constructor(
-    private val audioController: AudioController
+    private val audioController: AudioController,
+    private val callCache: CallCache,
 ) : ViewModel<VoiceCallScreenState, VoiceCallScreenEvent>(VoiceCallScreenState()) {
 
     init {
         viewModelScope.launch {
-            audioController.activeCallState.collect { call ->
-                updateState { it.copy(voiceCall = call) }
+            callCache.stream().collect { call ->
+                updateState { it.copy(activeCall = call) }
             }
         }
     }

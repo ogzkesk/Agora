@@ -1,4 +1,4 @@
-package com.ogzkesk.agora.model
+package com.ogzkesk.agora.lib.model
 
 import io.agora.rtc2.Constants
 
@@ -30,13 +30,12 @@ data class RemoteAudioState(
     }
 
     companion object {
-        fun create(uid: Int, state: Int, reason: Int, elapsed: Int) =
-            RemoteAudioState(
-                uid = uid,
-                state = mapState(state),
-                reason = mapReason(reason),
-                elapsed = elapsed
-            )
+        fun create(uid: Int, state: Int, reason: Int, elapsed: Int) = RemoteAudioState(
+            uid = uid,
+            state = mapState(state),
+            reason = mapReason(reason),
+            elapsed = elapsed
+        )
 
         private fun mapState(state: Int) = when (state) {
             Constants.REMOTE_AUDIO_STATE_STOPPED -> State.STATE_STOPPED

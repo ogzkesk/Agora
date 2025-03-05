@@ -1,8 +1,10 @@
 package com.ogzkesk.agora.di
 
 import android.content.Context
-import com.ogzkesk.agora.audio.AudioController
-import com.ogzkesk.agora.audio.TokenUtils
+import com.ogzkesk.agora.lib.CallCache
+import com.ogzkesk.agora.lib.RtcEventListener
+import com.ogzkesk.agora.lib.TokenUtils
+import com.ogzkesk.agora.lib.controller.AudioController
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,15 +12,21 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import io.agora.rtc2.RtcEngine
 import io.agora.rtc2.RtcEngineConfig
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object AgoraModule {
+
+    @Provides
+    @Singleton
+    fun provideCallCache() = CallCache()
+
+    @Provides
+    @Singleton
+    fun provideEventListener(
+        callCache: CallCache
+    ) = RtcEventListener(callCache)
 
     @Provides
     @Singleton
@@ -32,9 +40,12 @@ object AgoraModule {
     @Provides
     @Singleton
     fun provideRtcEngine(
-        config: RtcEngineConfig
+        config: RtcEngineConfig,
+        eventListener: RtcEventListener
     ): RtcEngine = try {
-        RtcEngine.create(config)
+        RtcEngine.create(config).apply {
+            addHandler(eventListener)
+        }
     } catch (e: Exception) {
         throw RuntimeException("Error initializing RTC engine: ${e.message}")
     }
@@ -42,7 +53,8 @@ object AgoraModule {
     @Provides
     @Singleton
     fun provideAudioController(
-        rtcEngine: RtcEngine
-    ) = AudioController(rtcEngine)
+        rtcEngine: RtcEngine,
+        callCache: CallCache,
+    ) = AudioController(rtcEngine, callCache)
 }
 

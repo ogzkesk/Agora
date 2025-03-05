@@ -51,10 +51,10 @@ import androidx.lifecycle.eventFlow
 import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.ogzkesk.agora.enums.CommunicationMode
-import com.ogzkesk.agora.enums.NoiseSuppressionMode
-import com.ogzkesk.agora.model.User
-import com.ogzkesk.agora.model.VoiceCall
+import com.ogzkesk.agora.lib.enums.CommunicationMode
+import com.ogzkesk.agora.lib.enums.NoiseSuppressionMode
+import com.ogzkesk.agora.lib.model.User
+import com.ogzkesk.agora.lib.model.ActiveCall
 import com.ogzkesk.agora.service.LocalRecordingService
 import com.ogzkesk.agora.ui.theme.AgoraTheme
 import kotlinx.coroutines.launch
@@ -76,8 +76,8 @@ fun VoiceCallScreen(
         navController.popBackStack()
     }
 
-    LaunchedEffect(state.voiceCall) {
-        if (state.voiceCall == null) navController.popBackStack()
+    LaunchedEffect(state.activeCall) {
+        if (state.activeCall == null) navController.popBackStack()
     }
 
     LaunchedEffect(Unit) {
@@ -98,7 +98,7 @@ fun VoiceCallScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Text(state.voiceCall?.channelName.orEmpty())
+                    Text(state.activeCall?.channelName.orEmpty())
                 },
                 navigationIcon = {
                     IconButton(
@@ -131,7 +131,7 @@ fun VoiceCallScreen(
                         onDismissRequest = { popup = false }
                     ) {
                         NoiseSuppressionMode.entries.forEach { mode ->
-                            val isActive = state.voiceCall?.let { it.noiseSuppressionMode == mode }
+                            val isActive = state.activeCall?.let { it.noiseSuppressionMode == mode }
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -175,7 +175,7 @@ fun VoiceCallScreen(
                         onClick = {
                             onEvent(
                                 VoiceCallScreenEvent.ToggleCommunicationMode(
-                                    if (state.voiceCall?.communicationMode == CommunicationMode.SPEAKER)
+                                    if (state.activeCall?.communicationMode == CommunicationMode.SPEAKER)
                                         CommunicationMode.EARPIECE
                                     else
                                         CommunicationMode.SPEAKER
@@ -183,9 +183,13 @@ fun VoiceCallScreen(
                             )
                         },
                         modifier = Modifier.padding(horizontal = 12.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = if (state.activeCall?.communicationMode != CommunicationMode.SPEAKER) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
+                            contentColor = if (state.activeCall?.communicationMode != CommunicationMode.SPEAKER) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
+                        )
                     ) {
                         Icon(
-                            imageVector = if (state.voiceCall?.communicationMode == CommunicationMode.SPEAKER)
+                            imageVector = if (state.activeCall?.communicationMode == CommunicationMode.SPEAKER)
                                 Icons.AutoMirrored.Filled.VolumeOff
                             else
                                 Icons.AutoMirrored.Filled.VolumeUp,
@@ -195,18 +199,22 @@ fun VoiceCallScreen(
 
                     FilledTonalIconButton(
                         onClick = {
-                            onEvent(VoiceCallScreenEvent.ToggleMuteLocal(state.voiceCall?.isLocalMuted == false))
+                            onEvent(VoiceCallScreenEvent.ToggleMuteLocal(state.activeCall?.isLocalMuted == false))
                         },
                         modifier = Modifier.padding(horizontal = 12.dp),
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = if (state.activeCall?.isLocalMuted == true) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
+                            contentColor = if (state.activeCall?.isLocalMuted == true) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
+                        )
                     ) {
                         Icon(
-                            imageVector = if (state.voiceCall?.isLocalMuted == true) Icons.Default.Mic else Icons.Default.MicOff,
+                            imageVector = if (state.activeCall?.isLocalMuted == true) Icons.Default.Mic else Icons.Default.MicOff,
                             contentDescription = null
                         )
                     }
 
                     Slider(
-                        value = state.voiceCall?.localVolume?.toFloat() ?: 100F,
+                        value = state.activeCall?.localVolume?.toFloat() ?: 100F,
                         valueRange = 0f..100f,
                         onValueChange = {
                             onEvent(VoiceCallScreenEvent.LocalVolumeChange(it.toInt()))
@@ -223,7 +231,7 @@ fun VoiceCallScreen(
                 .fillMaxSize(),
         ) {
             items(
-                items = state.voiceCall?.remoteUsers.orEmpty()
+                items = state.activeCall?.remoteUsers.orEmpty()
             ) { user ->
                 RemoteUser(
                     user = user,
@@ -308,7 +316,7 @@ private fun VoiceCallScreenPreview() {
         VoiceCallScreen(
             rememberNavController(),
             VoiceCallScreenState(
-                voiceCall = VoiceCall.create("test-channel", 0)
+                activeCall = ActiveCall.create("test-channel", 0)
             )
         ) {}
     }
