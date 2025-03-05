@@ -7,27 +7,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -37,11 +21,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -52,12 +34,14 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ogzkesk.agora.lib.enums.CommunicationMode
-import com.ogzkesk.agora.lib.enums.NoiseSuppressionMode
-import com.ogzkesk.agora.lib.model.User
 import com.ogzkesk.agora.lib.model.ActiveCall
+import com.ogzkesk.agora.lib.model.User
 import com.ogzkesk.agora.service.LocalRecordingService
+import com.ogzkesk.agora.ui.composable.CallBottomBar
+import com.ogzkesk.agora.ui.composable.MicIconButton
+import com.ogzkesk.agora.ui.composable.NavigationIcon
+import com.ogzkesk.agora.ui.composable.NoiseSuppressionMenu
 import com.ogzkesk.agora.ui.theme.AgoraTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +52,6 @@ fun VoiceCallScreen(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val coroutineScope = rememberCoroutineScope()
     var popup by remember { mutableStateOf(false) }
 
     BackHandler(true) {
@@ -85,7 +68,6 @@ fun VoiceCallScreen(
             .eventFlow
             .flowWithLifecycle(lifecycleOwner.lifecycle)
             .collect {
-                println("event: $it")
                 when (it) {
                     Lifecycle.Event.ON_RESUME -> LocalRecordingService.stop(context)
                     Lifecycle.Event.ON_PAUSE -> LocalRecordingService.start(context)
@@ -101,128 +83,47 @@ fun VoiceCallScreen(
                     Text(state.activeCall?.channelName.orEmpty())
                 },
                 navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                onEvent(VoiceCallScreenEvent.EndCall)
-                                navController.popBackStack()
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null
-                        )
+                    NavigationIcon {
+                        onEvent(VoiceCallScreenEvent.EndCall)
+                        navController.popBackStack()
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            popup = true
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = null
-                        )
-                    }
-                    DropdownMenu(
+                    NoiseSuppressionMenu(
+                        activeNoiseSuppressionMode = state.activeCall?.noiseSuppressionMode,
                         expanded = popup,
-                        onDismissRequest = { popup = false }
-                    ) {
-                        NoiseSuppressionMode.entries.forEach { mode ->
-                            val isActive = state.activeCall?.let { it.noiseSuppressionMode == mode }
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        "Noise suppression: ${mode.name}",
-                                        color = if (isActive == true) Color.Green else Color.Unspecified
-                                    )
-                                },
-                                onClick = {
-                                    onEvent(
-                                        VoiceCallScreenEvent.ToggleNoiseSuppressionMode(
-                                            enabled = isActive == false,
-                                            mode = mode
-                                        )
-                                    )
-                                    popup = false
-                                }
+                        onExpandChanged = { popup = it },
+                        onMenuItemClicked = { isActive, mode ->
+                            onEvent(
+                                VoiceCallScreenEvent.ToggleNoiseSuppressionMode(
+                                    enabled = !isActive,
+                                    mode = mode
+                                )
                             )
                         }
-                    }
+                    )
                 }
             )
         },
         bottomBar = {
-            BottomAppBar {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    FilledTonalIconButton(
-                        onClick = { onEvent(VoiceCallScreenEvent.EndCall) },
-                        modifier = Modifier.padding(horizontal = 12.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PowerSettingsNew,
-                            contentDescription = null
+            CallBottomBar(
+                isSpeakerActive = state.activeCall?.communicationMode == CommunicationMode.SPEAKER,
+                isLocalMuted = state.activeCall?.isLocalMuted == true,
+                localVolume = state.activeCall?.localVolume ?: 100,
+                onToggleCommunicationMode = { isSpeakerActive ->
+                    onEvent(
+                        VoiceCallScreenEvent.ToggleCommunicationMode(
+                            if (isSpeakerActive) CommunicationMode.EARPIECE else CommunicationMode.SPEAKER
                         )
-                    }
-
-                    FilledTonalIconButton(
-                        onClick = {
-                            onEvent(
-                                VoiceCallScreenEvent.ToggleCommunicationMode(
-                                    if (state.activeCall?.communicationMode == CommunicationMode.SPEAKER)
-                                        CommunicationMode.EARPIECE
-                                    else
-                                        CommunicationMode.SPEAKER
-                                )
-                            )
-                        },
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = if (state.activeCall?.communicationMode != CommunicationMode.SPEAKER) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
-                            contentColor = if (state.activeCall?.communicationMode != CommunicationMode.SPEAKER) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (state.activeCall?.communicationMode == CommunicationMode.SPEAKER)
-                                Icons.AutoMirrored.Filled.VolumeOff
-                            else
-                                Icons.AutoMirrored.Filled.VolumeUp,
-                            contentDescription = null
-                        )
-                    }
-
-                    FilledTonalIconButton(
-                        onClick = {
-                            onEvent(VoiceCallScreenEvent.ToggleMuteLocal(state.activeCall?.isLocalMuted == false))
-                        },
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = if (state.activeCall?.isLocalMuted == true) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
-                            contentColor = if (state.activeCall?.isLocalMuted == true) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (state.activeCall?.isLocalMuted == true) Icons.Default.Mic else Icons.Default.MicOff,
-                            contentDescription = null
-                        )
-                    }
-
-                    Slider(
-                        value = state.activeCall?.localVolume?.toFloat() ?: 100F,
-                        valueRange = 0f..100f,
-                        onValueChange = {
-                            onEvent(VoiceCallScreenEvent.LocalVolumeChange(it.toInt()))
-                        },
-                        modifier = Modifier.width(120.dp)
                     )
+                },
+                onLocalVolumeChanged = { onEvent(VoiceCallScreenEvent.LocalVolumeChange(it)) },
+                onToggleLocalMute = { onEvent(VoiceCallScreenEvent.ToggleMuteLocal(it)) },
+                onEndCallClicked = {
+                    onEvent(VoiceCallScreenEvent.EndCall)
+                    navController.popBackStack()
                 }
-            }
+            )
         }
     ) { paddingValues ->
         LazyColumn(
@@ -243,7 +144,7 @@ fun VoiceCallScreen(
 }
 
 @Composable
-fun RemoteUser(
+private fun RemoteUser(
     modifier: Modifier = Modifier,
     user: User,
     onUiEvent: (VoiceCallScreenEvent) -> Unit
@@ -267,21 +168,12 @@ fun RemoteUser(
                     "UserId: ${user.id}",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                FilledTonalIconButton(
+                MicIconButton(
+                    isMuted = user.isMuted,
                     onClick = {
                         onUiEvent(VoiceCallScreenEvent.ToggleMuteRemote(user.id, !user.isMuted))
-                    },
-                    modifier = Modifier.padding(horizontal = 12.dp),
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = if (user.isMuted) Color.Red else IconButtonDefaults.filledTonalIconButtonColors().containerColor,
-                        contentColor = if (user.isMuted) Color.White else IconButtonDefaults.filledTonalIconButtonColors().contentColor
-                    )
-                ) {
-                    Icon(
-                        imageVector = if (user.isMuted) Icons.Default.Mic else Icons.Default.MicOff,
-                        contentDescription = null
-                    )
-                }
+                    }
+                )
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,

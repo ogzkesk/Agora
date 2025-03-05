@@ -1,6 +1,11 @@
 package com.ogzkesk.agora.lib.controller
 
 import android.util.Log
+import android.view.SurfaceView
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.viewinterop.AndroidView
 import com.ogzkesk.agora.lib.CallCache
 import com.ogzkesk.agora.lib.TokenUtils
 import com.ogzkesk.agora.lib.enums.CommunicationMode
@@ -8,15 +13,17 @@ import com.ogzkesk.agora.lib.enums.NoiseSuppressionMode
 import io.agora.rtc2.ChannelMediaOptions
 import io.agora.rtc2.Constants
 import io.agora.rtc2.RtcEngine
+import io.agora.rtc2.video.VideoCanvas
 import kotlin.math.abs
 
-class AudioController(
+class Controller(
     private val engine: RtcEngine,
     private val callCache: CallCache,
 ) {
     private val TAG = this::class.java.name
 
-    fun startVoiceCalling(
+    fun startCall(
+        camera: Boolean,
         useTemporaryToken: Boolean,
         // channelName should generated from backend.
         channelName: String,
@@ -24,7 +31,7 @@ class AudioController(
         uid: Int,
         onError: (String) -> Unit
     ) {
-        val options = getDefaultChannelOptions()
+        val options = getDefaultChannelOptions(camera)
         if (useTemporaryToken) {
             val res = engine.joinChannel(
                 TokenUtils.TEMPORARY_TOKEN,
@@ -59,7 +66,7 @@ class AudioController(
         }
     }
 
-    fun leaveVoiceCalling() {
+    fun leaveCall() {
         engine.leaveChannel()
         callCache.update { null }
     }
@@ -110,11 +117,37 @@ class AudioController(
         }
     }
 
-    private fun getDefaultChannelOptions(): ChannelMediaOptions {
+    fun attachLocalView(view: SurfaceView) {
+        engine.setupLocalVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_FIT, 0))
+        callCache.update { it } // TODO: update local user
+    }
+
+    fun attachRemoteView(uid: Int, view: SurfaceView) {
+        engine.setupRemoteVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_FIT, uid))
+        callCache.update { it } // TODO: update remote video
+    }
+
+    private fun getDefaultChannelOptions(camera: Boolean): ChannelMediaOptions {
         return ChannelMediaOptions().apply {
             clientRoleType = Constants.CLIENT_ROLE_BROADCASTER
             channelProfile = Constants.CHANNEL_PROFILE_COMMUNICATION
             publishMicrophoneTrack = true
+            publishCameraTrack = camera
+        }
+    }
+
+    private fun enableVideo() {
+        engine.apply {
+            enableVideo()
+            startPreview()
+        }
+    }
+
+    private fun clean() {
+        engine.apply {
+            stopPreview()
+            leaveCall()
         }
     }
 }
+

@@ -42,6 +42,8 @@ import com.ogzkesk.agora.navigation.VoiceCallScreenRoute
 import com.ogzkesk.agora.ui.theme.AgoraTheme
 import kotlinx.coroutines.launch
 
+// TODO temproray token textField visible when active.
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -80,7 +82,6 @@ fun MainScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Main") },
-
             )
         }
     ) { paddingValues ->
@@ -128,6 +129,18 @@ fun MainScreen(
             ) {
                 Text("Start Voice Calling")
             }
+
+            Button(
+                onClick = {
+                    if (checkRequiredPermissions(context)) {
+                        onEvent(MainScreenEvent.StartVideoCalling)
+                    } else {
+                        resultLauncher.launch(getRequiredPermissions())
+                    }
+                }, modifier = Modifier.padding(8.dp)
+            ) {
+                Text("Start Video Calling")
+            }
         }
     }
 
@@ -143,27 +156,31 @@ fun MainScreen(
     }
 }
 
-fun checkRequiredPermissions(context: Context): Boolean {
+private fun checkRequiredPermissions(context: Context): Boolean {
     return !getRequiredPermissions().any {
         ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
     }
 }
 
-fun getRequiredPermissions(): Array<String> {
+private fun getRequiredPermissions() : Array<String> {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(
             Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.CAMERA,
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.BLUETOOTH_CONNECT
         )
     } else {
-        arrayOf(Manifest.permission.RECORD_AUDIO)
+        arrayOf(
+            Manifest.permission.RECORD_AUDIO,
+            Manifest.permission.CAMERA
+        )
     }
 }
 
 @Preview
 @Composable
-fun MainScreenPreview() {
+private fun MainScreenPreview() {
     AgoraTheme {
         MainScreen(
             navController = rememberNavController(),

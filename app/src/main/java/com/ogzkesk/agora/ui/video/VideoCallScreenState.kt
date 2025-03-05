@@ -1,5 +1,7 @@
 package com.ogzkesk.agora.ui.video
 
+import com.ogzkesk.agora.lib.model.ActiveCall
+
 data class VideoCallScreenState(
-    val testData: String = ""
+    val activeCall: ActiveCall? = null
 )

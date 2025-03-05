@@ -4,7 +4,7 @@ import android.content.Context
 import com.ogzkesk.agora.lib.CallCache
 import com.ogzkesk.agora.lib.RtcEventListener
 import com.ogzkesk.agora.lib.TokenUtils
-import com.ogzkesk.agora.lib.controller.AudioController
+import com.ogzkesk.agora.lib.controller.Controller
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -52,9 +52,9 @@ object AgoraModule {
 
     @Provides
     @Singleton
-    fun provideAudioController(
+    fun provideController(
         rtcEngine: RtcEngine,
         callCache: CallCache,
-    ) = AudioController(rtcEngine, callCache)
+    ) = Controller(rtcEngine, callCache)
 }
 
