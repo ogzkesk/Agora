@@ -51,7 +51,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 logging-interceptor = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "loggingInterceptor" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
-voice-sdk = { module = "io.agora.rtc:voice-sdk", version.ref = "voiceSdk" }
+voice-sdk = { module = "io.agora.rtc:full-sdk", version.ref = "voiceSdk" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

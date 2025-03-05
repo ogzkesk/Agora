@@ -16,19 +16,17 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             audioController.activeCallState.collect { call ->
-                call?.let { voiceCall ->
-                    val errorMsg: String? = when (voiceCall.error) {
-                        EngineError.ERR_TOKEN_EXPIRED -> "Token is expired"
-                        EngineError.ERR_INVALID_TOKEN -> "Invalid token"
-                        else -> null
-                    }
-                    updateState {
-                        it.copy(
-                            activeVoiceCall = call,
-                            isLoading = false,
-                            errorMsg = errorMsg
-                        )
-                    }
+                println("call: $call")
+                updateState {
+                    it.copy(
+                        activeVoiceCall = call,
+                        isLoading = false,
+                        errorMsg = when (call?.error) {
+                            EngineError.ERR_TOKEN_EXPIRED -> "Token is expired"
+                            EngineError.ERR_INVALID_TOKEN -> "Invalid token"
+                            else -> null
+                        }
+                    )
                 }
             }
         }

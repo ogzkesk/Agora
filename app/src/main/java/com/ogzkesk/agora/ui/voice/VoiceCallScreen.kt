@@ -33,7 +33,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,11 +46,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.eventFlow
+import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.ogzkesk.agora.audio.AudioController
 import com.ogzkesk.agora.enums.CommunicationMode
 import com.ogzkesk.agora.enums.NoiseSuppressionMode
 import com.ogzkesk.agora.model.User
@@ -81,20 +80,18 @@ fun VoiceCallScreen(
         if (state.voiceCall == null) navController.popBackStack()
     }
 
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) {
-                LocalRecordingService.start(context)
+    LaunchedEffect(Unit) {
+        lifecycleOwner.lifecycle
+            .eventFlow
+            .flowWithLifecycle(lifecycleOwner.lifecycle)
+            .collect {
+                println("event: $it")
+                when (it) {
+                    Lifecycle.Event.ON_RESUME -> LocalRecordingService.stop(context)
+                    Lifecycle.Event.ON_PAUSE -> LocalRecordingService.start(context)
+                    else -> {}
+                }
             }
-            if (event == Lifecycle.Event.ON_RESUME) {
-                LocalRecordingService.stop(context)
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            LocalRecordingService.stop(context)
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
     }
 
     Scaffold(
