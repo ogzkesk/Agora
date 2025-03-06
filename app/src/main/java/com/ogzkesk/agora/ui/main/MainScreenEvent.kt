@@ -8,4 +8,5 @@ sealed interface MainScreenEvent : ViewEvent {
     data object ResetErrorState : MainScreenEvent
     data class ToggleTemporaryToken(val value: Boolean) : MainScreenEvent
     data class ChannelNameChangedEvent(val value: String) : MainScreenEvent
+    data class TempTokenChangedEvent(val value: String) : MainScreenEvent
 }

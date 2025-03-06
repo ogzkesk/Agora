@@ -7,5 +7,6 @@ data class MainScreenState(
     val useTemporaryToken: Boolean = false,
     val isLoading: Boolean = false,
     val errorMsg: String? = null,
-    val channelName: String = ""
+    val channelName: String = "",
+    val tempToken: String = ""
 )

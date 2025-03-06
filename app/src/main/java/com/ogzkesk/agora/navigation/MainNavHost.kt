@@ -1,5 +1,6 @@
 package com.ogzkesk.agora.navigation
 
+import android.telecom.InCallService.VideoCall
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -10,6 +11,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ogzkesk.agora.ui.main.MainScreen
 import com.ogzkesk.agora.ui.main.MainViewModel
+import com.ogzkesk.agora.ui.video.VideoCallScreen
+import com.ogzkesk.agora.ui.video.VideoCallViewModel
 import com.ogzkesk.agora.ui.voice.VoiceCallScreen
 import com.ogzkesk.agora.ui.voice.VoiceCallViewModel
 
@@ -40,9 +43,9 @@ fun MainNavHost(
             )
         }
         composable<VideoCallScreenRoute> {
-            val viewModel: VoiceCallViewModel = hiltViewModel()
+            val viewModel: VideoCallViewModel = hiltViewModel()
             val state by viewModel.state.collectAsStateWithLifecycle()
-            VoiceCallScreen(
+            VideoCallScreen(
                 navController = navController,
                 state = state,
                 onEvent = viewModel::onEvent

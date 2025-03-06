@@ -2,7 +2,7 @@ package com.ogzkesk.agora.ui.voice
 
 import androidx.lifecycle.viewModelScope
 import com.ogzkesk.agora.lib.CallCache
-import com.ogzkesk.agora.lib.controller.Controller
+import com.ogzkesk.agora.lib.Controller
 import com.ogzkesk.agora.mvi.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch

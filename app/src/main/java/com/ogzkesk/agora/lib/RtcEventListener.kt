@@ -5,6 +5,7 @@ import com.ogzkesk.agora.lib.enums.CommunicationMode
 import com.ogzkesk.agora.lib.enums.EngineError
 import com.ogzkesk.agora.lib.enums.NetworkQuality
 import com.ogzkesk.agora.lib.model.ActiveCall
+import com.ogzkesk.agora.lib.model.CallType
 import com.ogzkesk.agora.lib.model.RemoteAudioState
 import com.ogzkesk.agora.lib.model.User
 import io.agora.rtc2.IRtcEngineEventHandler
@@ -18,7 +19,11 @@ class RtcEventListener(
     override fun onJoinChannelSuccess(channel: String?, uid: Int, elapsed: Int) {
         super.onJoinChannelSuccess(channel, uid, elapsed)
         callCache.update {
-            ActiveCall.create(channel.toString(), uid)
+            it?.copy(channelId = uid) ?: ActiveCall.create(
+                channel.toString(),
+                uid,
+                CallType.Voice.EMPTY
+            )
         }
         Log.i(TAG, "Joined channel: $channel uid: $uid elapsed: $elapsed")
     }

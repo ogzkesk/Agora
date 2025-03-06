@@ -2,8 +2,9 @@ package com.ogzkesk.agora.ui.main
 
 import androidx.lifecycle.viewModelScope
 import com.ogzkesk.agora.lib.CallCache
-import com.ogzkesk.agora.lib.controller.Controller
+import com.ogzkesk.agora.lib.Controller
 import com.ogzkesk.agora.lib.enums.EngineError
+import com.ogzkesk.agora.lib.model.CallType
 import com.ogzkesk.agora.mvi.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -35,8 +36,6 @@ class MainViewModel @Inject constructor(
 
     override fun onEvent(event: MainScreenEvent) {
         when (event) {
-            is MainScreenEvent.StartVoiceCalling -> startCall(camera = false)
-            is MainScreenEvent.StartVideoCalling -> startCall(camera = true)
             is MainScreenEvent.ToggleTemporaryToken -> updateState {
                 it.copy(useTemporaryToken = event.value)
             }
@@ -45,27 +44,61 @@ class MainViewModel @Inject constructor(
                 it.copy(channelName = event.value)
             }
 
+            is MainScreenEvent.TempTokenChangedEvent -> updateState {
+                it.copy(tempToken = event.value)
+            }
+
             MainScreenEvent.ResetErrorState -> updateState {
                 it.copy(errorMsg = null)
+            }
+
+            is MainScreenEvent.StartVoiceCalling -> withState {
+                if(!checkFields()) return@withState
+                startCall(
+                    callType = CallType.Voice(
+                        tempToken = if (useTemporaryToken) tempToken else null,
+                        channelName = channelName,
+                        uid = 0
+                    )
+                )
+            }
+
+            is MainScreenEvent.StartVideoCalling -> withState {
+                if(!checkFields()) return@withState
+                startCall(
+                    callType = CallType.Camera(
+                        tempToken = if (useTemporaryToken) tempToken else null,
+                        channelName = channelName,
+                        uid = 0
+                    )
+                )
             }
         }
     }
 
 
-    private fun startCall(camera: Boolean) {
+    private fun startCall(callType: CallType) {
         updateState {
             it.copy(isLoading = true)
         }
-
         controller.startCall(
-            camera = camera,
-            useTemporaryToken = state.value.useTemporaryToken,
-            channelName = state.value.channelName,
-            uid = 0
+            callType = callType
         ) { error ->
             updateState {
                 it.copy(isLoading = false, errorMsg = error)
             }
         }
+    }
+
+    private fun checkFields(): Boolean {
+        if (state.value.channelName.isEmpty() ||
+            state.value.useTemporaryToken && state.value.tempToken.isEmpty()
+        ) {
+            updateState {
+                it.copy(errorMsg = "Enter required fields")
+            }
+            return false
+        }
+        return true
     }
 }

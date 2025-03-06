@@ -34,7 +34,6 @@ import androidx.lifecycle.flowWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.ogzkesk.agora.lib.enums.CommunicationMode
-import com.ogzkesk.agora.lib.model.ActiveCall
 import com.ogzkesk.agora.lib.model.User
 import com.ogzkesk.agora.service.LocalRecordingService
 import com.ogzkesk.agora.ui.composable.CallBottomBar
@@ -207,9 +206,7 @@ private fun VoiceCallScreenPreview() {
     AgoraTheme {
         VoiceCallScreen(
             rememberNavController(),
-            VoiceCallScreenState(
-                activeCall = ActiveCall.create("test-channel", 0)
-            )
+            VoiceCallScreenState()
         ) {}
     }
 }

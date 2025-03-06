@@ -13,16 +13,18 @@ data class ActiveCall(
     val isLocalMuted: Boolean,
     val localVolume: Int,
     val remoteAudioState: RemoteAudioState?,
+    val callType: CallType?,
     val error: EngineError?,
 ) {
     companion object {
-        fun create(channelName: String, uid: Int): ActiveCall {
+        fun create(channelName: String, uid: Int, callType: CallType): ActiveCall {
             return ActiveCall(
                 channelName = channelName,
                 channelId = uid,
                 remoteUsers = emptyList(),
                 communicationMode = CommunicationMode.SPEAKER,
                 noiseSuppressionMode = null,
+                callType = callType,
                 isLocalMuted = false,
                 localVolume = 100,
                 remoteAudioState = null,

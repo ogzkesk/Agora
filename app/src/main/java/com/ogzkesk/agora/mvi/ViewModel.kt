@@ -12,5 +12,6 @@ abstract class ViewModel<S, E : ViewEvent>(initialState: S) : ViewModel() {
 
     abstract fun onEvent(event: E)
 
-    fun updateState(block: (S) -> S) = mutableState.update { block(it) }
+    fun updateState(block: (S) -> S) = mutableState.update(block)
+    fun withState(block: S.() -> Unit) = block(state.value)
 }

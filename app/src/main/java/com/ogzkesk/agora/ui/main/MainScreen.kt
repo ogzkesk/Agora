@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,11 +39,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.ogzkesk.agora.lib.model.CallType
+import com.ogzkesk.agora.navigation.VideoCallScreenRoute
 import com.ogzkesk.agora.navigation.VoiceCallScreenRoute
 import com.ogzkesk.agora.ui.theme.AgoraTheme
 import kotlinx.coroutines.launch
-
-// TODO temproray token textField visible when active.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +68,10 @@ fun MainScreen(
 
     LaunchedEffect(state) {
         if (state.activeCall != null) {
-            navController.navigate(VoiceCallScreenRoute)
+            when (state.activeCall.callType) {
+                is CallType.Voice -> navController.navigate(VoiceCallScreenRoute)
+                is CallType.Camera -> navController.navigate(VideoCallScreenRoute)
+            }
         }
         if (state.errorMsg != null) {
             snackBarHostState.showSnackbar(state.errorMsg, duration = SnackbarDuration.Short)
@@ -100,22 +104,35 @@ fun MainScreen(
                 placeholder = {
                     Text("Enter channel name")
                 },
-                enabled = !state.useTemporaryToken,
                 modifier = Modifier.padding(8.dp)
             )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Text("Use temporary token")
-                Checkbox(
-                    checked = state.useTemporaryToken,
-                    onCheckedChange = {
-                        onEvent(MainScreenEvent.ToggleTemporaryToken(it))
-                    }
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text("Use temporary token")
+                    Checkbox(
+                        checked = state.useTemporaryToken,
+                        onCheckedChange = {
+                            onEvent(MainScreenEvent.ToggleTemporaryToken(it))
+                        }
+                    )
+                }
+                AnimatedVisibility(state.useTemporaryToken) {
+                    TextField(
+                        value = state.tempToken,
+                        onValueChange = {
+                            onEvent(MainScreenEvent.TempTokenChangedEvent(it))
+                        },
+                        placeholder = {
+                            Text("Enter temporary token")
+                        },
+                        modifier = Modifier.padding(8.dp)
+                    )
+                }
             }
 
             Button(
@@ -162,7 +179,7 @@ private fun checkRequiredPermissions(context: Context): Boolean {
     }
 }
 
-private fun getRequiredPermissions() : Array<String> {
+private fun getRequiredPermissions(): Array<String> {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         arrayOf(
             Manifest.permission.RECORD_AUDIO,

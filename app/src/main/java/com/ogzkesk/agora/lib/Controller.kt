@@ -1,15 +1,12 @@
-package com.ogzkesk.agora.lib.controller
+package com.ogzkesk.agora.lib
 
 import android.util.Log
 import android.view.SurfaceView
-import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.viewinterop.AndroidView
-import com.ogzkesk.agora.lib.CallCache
-import com.ogzkesk.agora.lib.TokenUtils
+import android.view.View
 import com.ogzkesk.agora.lib.enums.CommunicationMode
 import com.ogzkesk.agora.lib.enums.NoiseSuppressionMode
+import com.ogzkesk.agora.lib.model.ActiveCall
+import com.ogzkesk.agora.lib.model.CallType
 import io.agora.rtc2.ChannelMediaOptions
 import io.agora.rtc2.Constants
 import io.agora.rtc2.RtcEngine
@@ -23,44 +20,57 @@ class Controller(
     private val TAG = this::class.java.name
 
     fun startCall(
-        camera: Boolean,
-        useTemporaryToken: Boolean,
-        // channelName should generated from backend.
-        channelName: String,
-        // userId "0" creates random uid for testing purpose, should generated from backend.
-        uid: Int,
+        callType: CallType,
         onError: (String) -> Unit
     ) {
-        val options = getDefaultChannelOptions(camera)
-        if (useTemporaryToken) {
+        val isCamera = callType is CallType.Camera
+        val options = if(isCamera){
+            engine.enableVideo()
+            engine.startPreview()
+            getDefaultChannelOptions(camera = true)
+        } else {
+            getDefaultChannelOptions(camera = false)
+        }
+
+        callType.tempToken?.let { token ->
             val res = engine.joinChannel(
-                TokenUtils.TEMPORARY_TOKEN,
-                TokenUtils.TEST_CHANNEL_NAME,
-                uid,
+                token,
+                callType.channelName,
+                callType.uid,
                 options
             )
             if (res != 0) {
                 val errorMsg = RtcEngine.getErrorDescription(abs(res))
                 onError(errorMsg)
                 Log.i(TAG, "Error -> $errorMsg")
+            } else {
+                callCache.update {
+                    ActiveCall.create(callType.channelName, callType.uid, callType)
+                }
             }
-        } else {
+        } ?: run {
             // uses agora server to generate token.
             TokenUtils.generate(
-                channelName,
-                uid,
+                callType.channelName,
+                callType.uid,
                 { token ->
                     token?.let {
-                        val res = engine.joinChannel(token, channelName, uid, options)
+                        val res =
+                            engine.joinChannel(token, callType.channelName, callType.uid, options)
                         if (res != 0) {
                             val errorMsg = RtcEngine.getErrorDescription(abs(res))
                             onError(errorMsg)
                             Log.i(TAG, "Error -> $errorMsg")
+                        } else {
+                            callCache.update {
+                                ActiveCall.create(callType.channelName, callType.uid, callType)
+                            }
                         }
                     }
                 },
                 { exc ->
                     onError(exc.message.toString())
+                    callCache.update { null }
                 }
             )
         }
@@ -68,6 +78,8 @@ class Controller(
 
     fun leaveCall() {
         engine.leaveChannel()
+        engine.stopPreview()
+        engine.disableVideo()
         callCache.update { null }
     }
 
@@ -117,14 +129,12 @@ class Controller(
         }
     }
 
-    fun attachLocalView(view: SurfaceView) {
-        engine.setupLocalVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_FIT, 0))
-        callCache.update { it } // TODO: update local user
+    fun attachLocalView(view: View) {
+        engine.setupLocalVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_ADAPTIVE, 0))
     }
 
-    fun attachRemoteView(uid: Int, view: SurfaceView) {
-        engine.setupRemoteVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_FIT, uid))
-        callCache.update { it } // TODO: update remote video
+    fun attachRemoteView(uid: Int, view: View) {
+        engine.setupRemoteVideo(VideoCanvas(view, VideoCanvas.RENDER_MODE_ADAPTIVE, uid))
     }
 
     private fun getDefaultChannelOptions(camera: Boolean): ChannelMediaOptions {
@@ -135,19 +145,4 @@ class Controller(
             publishCameraTrack = camera
         }
     }
-
-    private fun enableVideo() {
-        engine.apply {
-            enableVideo()
-            startPreview()
-        }
-    }
-
-    private fun clean() {
-        engine.apply {
-            stopPreview()
-            leaveCall()
-        }
-    }
 }
-

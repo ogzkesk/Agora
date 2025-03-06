@@ -1,6 +1,6 @@
 package com.ogzkesk.agora.ui.video
 
-import android.view.SurfaceView
+import android.view.View
 import com.ogzkesk.agora.lib.enums.CommunicationMode
 import com.ogzkesk.agora.lib.enums.NoiseSuppressionMode
 import com.ogzkesk.agora.mvi.ViewEvent
@@ -18,6 +18,6 @@ sealed interface VideoCallScreenEvent : ViewEvent {
         val mode: NoiseSuppressionMode
     ) : VideoCallScreenEvent
 
-    data class LocalViewAttached(val view: SurfaceView) : VideoCallScreenEvent
-    data class RemoteViewAttached(val uid: Int, val view: SurfaceView) : VideoCallScreenEvent
+    data class LocalViewAttached(val view: View) : VideoCallScreenEvent
+    data class RemoteViewAttached(val uid: Int, val view: View) : VideoCallScreenEvent
 }
